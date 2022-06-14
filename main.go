@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -48,11 +49,17 @@ func main() {
 		panic(err)
 	}
 
-	// TODO: derive public from private, if that's what's given
-	// TODO: extract public from cert, if that's what's given
-	key, err := x509.ParsePKIXPublicKey(block.Bytes)
-	if err != nil {
-		panic(err)
+	var key crypto.PublicKey
+	if pubKey, err := x509.ParsePKIXPublicKey(block.Bytes); err == nil {
+		key = pubKey
+	} else if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
+		key = cert.PublicKey
+	} else if privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil { // RSA
+		key = privKey.Public()
+	} else if privKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil { // ECDSA
+		key = privKey.Public()
+	} else {
+		panic("input PEM does not encode a public key, certificate, or private key")
 	}
 
 	// TODO: do generics help??
