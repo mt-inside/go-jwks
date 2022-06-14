@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
@@ -20,6 +21,7 @@ type jwks struct {
 }
 
 type myRsaPublicKey rsa.PublicKey
+type myEcdsaPublicKey ecdsa.PublicKey
 
 func padEven(n string) string {
 	if len(n)%2 == 1 {
@@ -52,6 +54,8 @@ func main() {
 	switch bar := key.(type) {
 	case *rsa.PublicKey:
 		foo = (*myRsaPublicKey)(bar)
+	case *ecdsa.PublicKey:
+		foo = (*myEcdsaPublicKey)(bar)
 	default:
 		panic("Unknown key type")
 	}
@@ -79,6 +83,20 @@ func (k *myRsaPublicKey) MarshalJSON() ([]byte, error) {
 		KeyType: "RSA",
 		N:       base64.RawURLEncoding.EncodeToString(k.N.Bytes()),
 		E:       base64.RawURLEncoding.EncodeToString(bufE),
+	})
+}
+
+func (k *myEcdsaPublicKey) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&struct {
+		KeyType string `json:"kty"`
+		Curve   string `json:"crv"`
+		X       string `json:"x"`
+		Y       string `json:"y"`
+	}{
+		KeyType: "EC",
+		Curve:   k.Curve.Params().Name,
+		X:       base64.RawURLEncoding.EncodeToString(k.X.Bytes()),
+		Y:       base64.RawURLEncoding.EncodeToString(k.Y.Bytes()),
 	})
 }
 
