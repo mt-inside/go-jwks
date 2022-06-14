@@ -12,11 +12,11 @@ import (
 )
 
 type jwk interface {
-	MarshalJson() ([]byte, error)
+	MarshalJSON() ([]byte, error)
 }
 
 type jwks struct {
-	Keys []*myRsaPublicKey `json:"keys"`
+	Keys []jwk `json:"keys"`
 }
 
 type myRsaPublicKey rsa.PublicKey
@@ -46,15 +46,21 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	rsaKey := key.(*rsa.PublicKey) // FIXME
 
-	// TODO: do this is a custom marshaller
+	// TODO: do generics help??
+	var foo jwk
+	switch bar := key.(type) {
+	case *rsa.PublicKey:
+		foo = (*myRsaPublicKey)(bar)
+	default:
+		panic("Unknown key type")
+	}
 
 	if singleton {
-		op(rsaKey)
+		op(foo)
 	} else {
 		ks := jwks{
-			Keys: []*myRsaPublicKey{(*myRsaPublicKey)(rsaKey)},
+			Keys: []jwk{foo},
 		}
 
 		op(ks)
