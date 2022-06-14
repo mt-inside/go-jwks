@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/ecdsa"
+	"crypto/ed25519"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
@@ -22,6 +23,7 @@ type jwks struct {
 
 type myRsaPublicKey rsa.PublicKey
 type myEcdsaPublicKey ecdsa.PublicKey
+type myEd25519PublicKey ed25519.PublicKey
 
 func padEven(n string) string {
 	if len(n)%2 == 1 {
@@ -60,8 +62,11 @@ func main() {
 		foo = (*myRsaPublicKey)(bar)
 	case *ecdsa.PublicKey:
 		foo = (*myEcdsaPublicKey)(bar)
+	case ed25519.PublicKey: // Not a pointer *shrug*
+		foo = (myEd25519PublicKey)(bar)
+		panic("JWK does not support Ed25519")
 	default:
-		panic("Unknown key type")
+		panic(fmt.Sprintf("Unknown key type: %T", key))
 	}
 
 	if singleton {
@@ -102,6 +107,10 @@ func (k *myEcdsaPublicKey) MarshalJSON() ([]byte, error) {
 		X:       base64.RawURLEncoding.EncodeToString(k.X.Bytes()),
 		Y:       base64.RawURLEncoding.EncodeToString(k.Y.Bytes()),
 	})
+}
+
+func (k myEd25519PublicKey) MarshalJSON() ([]byte, error) {
+	return nil, nil
 }
 
 func op(d interface{}) {
