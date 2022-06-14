@@ -22,9 +22,9 @@ type jwks struct {
 	Keys []jwk `json:"keys"`
 }
 
-type myRsaPublicKey rsa.PublicKey
-type myEcdsaPublicKey ecdsa.PublicKey
-type myEd25519PublicKey ed25519.PublicKey
+type printableRsaPublicKey rsa.PublicKey
+type printableEcdsaPublicKey ecdsa.PublicKey
+type printableEd25519PublicKey ed25519.PublicKey
 
 func padEven(n string) string {
 	if len(n)%2 == 1 {
@@ -94,23 +94,23 @@ func process(block *pem.Block) jwk {
 	}
 
 	// TODO: do generics help??
-	var foo jwk
-	switch bar := key.(type) {
+	var printableKey jwk
+	switch typedKey := key.(type) {
 	case *rsa.PublicKey:
-		foo = (*myRsaPublicKey)(bar)
+		printableKey = (*printableRsaPublicKey)(typedKey)
 	case *ecdsa.PublicKey:
-		foo = (*myEcdsaPublicKey)(bar)
+		printableKey = (*printableEcdsaPublicKey)(typedKey)
 	case ed25519.PublicKey: // Not a pointer *shrug*
-		foo = (myEd25519PublicKey)(bar)
+		printableKey = (printableEd25519PublicKey)(typedKey)
 		panic("JWK does not support Ed25519")
 	default:
 		panic(fmt.Sprintf("Unknown key type: %T", key))
 	}
 
-	return foo
+	return printableKey
 }
 
-func (k *myRsaPublicKey) MarshalJSON() ([]byte, error) {
+func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
 	bufE := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bufE, uint32(k.E))
 	bufE = bufE[:3] // TODO: what does the spec say? Are they always 3byte? Do we calcualte nearest power-of-2? Does Write() do this automatically?
@@ -125,7 +125,7 @@ func (k *myRsaPublicKey) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (k *myEcdsaPublicKey) MarshalJSON() ([]byte, error) {
+func (k *printableEcdsaPublicKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		KeyType string `json:"kty"`
 		Curve   string `json:"crv"`
@@ -139,7 +139,7 @@ func (k *myEcdsaPublicKey) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (k myEd25519PublicKey) MarshalJSON() ([]byte, error) {
+func (k printableEd25519PublicKey) MarshalJSON() ([]byte, error) {
 	return nil, nil
 }
 
