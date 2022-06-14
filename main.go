@@ -33,6 +33,8 @@ func padEven(n string) string {
 func main() {
 	var singleton bool = false
 
+	// TODO: add a --private option to output the private bits of the key too, ref: https://datatracker.ietf.org/doc/html/rfc7517#appendix-A
+
 	bytes, err := os.ReadFile(os.Args[1]) // TODO arg parsing (and --singleton)
 	if err != nil {
 		panic(err)
@@ -44,6 +46,8 @@ func main() {
 		panic(err)
 	}
 
+	// TODO: derive public from private, if that's what's given
+	// TODO: extract public from cert, if that's what's given
 	key, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
 		panic(err)
