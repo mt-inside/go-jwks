@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"os"
 )
 
@@ -43,8 +44,7 @@ func main() {
 	opts.Singleton = false
 
 	// TODO: read keys(s) from stdin
-
-	bytes, err := os.ReadFile(os.Args[1]) // TODO arg parsing (and --singleton)
+	bytes, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		panic(err)
 	}
