@@ -34,9 +34,13 @@ func padEven(n string) string {
 }
 
 func main() {
-	var singleton bool = false
-
-	// TODO: add a --private option to output the private bits of the key too, ref: https://datatracker.ietf.org/doc/html/rfc7517#appendix-A
+	var opts struct {
+		Singleton bool `short:"1" long:"singleton" description:"Output only a single JWK rather than an array of them (a JWKS)"`
+		// TODO: https://datatracker.ietf.org/doc/html/rfc7517#appendix-A
+		Private bool `short:"p" long:"private" description:"Include private key parameters in output. If not specified then supplying a private key will extract just the public fields from it"`
+	}
+	//flags.Parse(&opts) FIXME
+	opts.Singleton = false
 
 	// TODO: read keys(s) from stdin
 
@@ -45,11 +49,32 @@ func main() {
 		panic(err)
 	}
 
-	// TODO check "rest" != len(0) and loop over all the pem blocks
-	block, _ := pem.Decode(bytes)
-	if err != nil {
-		panic(err)
+	var blocks []*pem.Block
+	for len(bytes) != 0 {
+		block, rest := pem.Decode(bytes)
+		if block == nil {
+			panic("Input doesn't decode as PEM")
+		}
+		blocks = append(blocks, block)
+		bytes = rest
 	}
+
+	if opts.Singleton {
+		if len(blocks) != 1 {
+			panic("--singleton requires input PEM containing precisely one key")
+		}
+		op(process(blocks[0]))
+		os.Exit(0)
+	}
+
+	var keys jwks
+	for _, block := range blocks {
+		keys.Keys = append(keys.Keys, process(block))
+	}
+	op(keys)
+}
+
+func process(block *pem.Block) jwk {
 
 	var key crypto.PublicKey
 	if pubKey, err := x509.ParsePKIXPublicKey(block.Bytes); err == nil {
@@ -82,15 +107,7 @@ func main() {
 		panic(fmt.Sprintf("Unknown key type: %T", key))
 	}
 
-	if singleton {
-		op(foo)
-	} else {
-		ks := jwks{
-			Keys: []jwk{foo},
-		}
-
-		op(ks)
-	}
+	return foo
 }
 
 func (k *myRsaPublicKey) MarshalJSON() ([]byte, error) {
