@@ -56,9 +56,13 @@ func main() {
 		key = pubKey
 	} else if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
 		key = cert.PublicKey
-	} else if privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil { // RSA
+	} else if privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil { // RSA only; type *rsa.PrivateKey
 		key = privKey.Public()
-	} else if privKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil { // ECDSA
+	} else if privKey, _ := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil { // RSA, ECDSA, Ed25519; type any, however: https://pkg.go.dev/crypto#PrivateKey
+		key = privKey.(interface {
+			Public() crypto.PublicKey
+		}).Public()
+	} else if privKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil { // ECDSA only; type *ecdsa.PrivateKey
 		key = privKey.Public()
 	} else {
 		panic("input PEM does not encode a public key, certificate, or private key")
