@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/jessevdk/go-flags"
 )
 
 type jwk interface {
@@ -40,8 +42,7 @@ func main() {
 		// TODO: https://datatracker.ietf.org/doc/html/rfc7517#appendix-A
 		Private bool `short:"p" long:"private" description:"Include private key parameters in output. If not specified then supplying a private key will extract just the public fields from it"`
 	}
-	//flags.Parse(&opts) FIXME
-	opts.Singleton = false
+	flags.Parse(&opts)
 
 	// TODO: read keys(s) from stdin
 	bytes, err := io.ReadAll(os.Stdin)
