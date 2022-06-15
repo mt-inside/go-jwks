@@ -2,7 +2,7 @@
 
 Run from container image:
 ```bash
-TODO
+cat key.pwm | docker run -i --rm mtinside/pem2jwks
 ```
 
 Download single, statically-linked binary
