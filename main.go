@@ -114,15 +114,18 @@ func process(block *pem.Block) jwk {
 func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
 	bufE := make([]byte, 4)
 	binary.LittleEndian.PutUint32(bufE, uint32(k.E))
-	bufE = bufE[:3] // TODO: what does the spec say? Are they always 3byte? Do we calcualte nearest power-of-2? Does Write() do this automatically?
+	bufE = bufE[:3] // TODO: JWK spec says nothing about truncating this, check RSA spec.
 	return json.Marshal(&struct {
 		KeyType string `json:"kty"`
-		N       string `json:"n"`
-		E       string `json:"e"`
+		//Algorithm string `json:"alg"`
+		N string `json:"n"` // Modulus
+		E string `json:"e"` // Public exponent
+		// D // Private exponent
 	}{
 		KeyType: "RSA",
-		N:       base64.RawURLEncoding.EncodeToString(k.N.Bytes()),
-		E:       base64.RawURLEncoding.EncodeToString(bufE),
+		//Algorithm: // TODO: eg RS256. Sure we extrat this in http-log
+		N: base64.RawURLEncoding.EncodeToString(k.N.Bytes()),
+		E: base64.RawURLEncoding.EncodeToString(bufE),
 	})
 }
 
