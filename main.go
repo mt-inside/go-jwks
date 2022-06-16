@@ -34,20 +34,16 @@ type printableRsaPrivateKey rsa.PrivateKey
 type printableEcdsaPrivateKey ecdsa.PrivateKey
 type printableEd25519PrivateKey ed25519.PrivateKey
 
-func padEven(n string) string {
-	if len(n)%2 == 1 {
-		return "0" + n
-	}
-	return n
-}
-
 func main() {
 	var opts struct {
 		Singleton bool `short:"1" long:"singleton" description:"Output only a single JWK rather than an array of them (a JWKS)"`
 		// TODO: https://datatracker.ietf.org/doc/html/rfc7517#appendix-A
 		Private bool `short:"p" long:"private" description:"Include private key parameters in output. If not specified then supplying a private key will extract just the public fields from it"`
 	}
-	flags.Parse(&opts)
+	_, err := flags.Parse(&opts)
+	if err != nil {
+		panic(err)
+	}
 
 	bytes, err := io.ReadAll(os.Stdin)
 	if err != nil {

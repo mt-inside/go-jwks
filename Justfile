@@ -5,7 +5,15 @@ platforms := "linux/amd64,linux/arm64,linux/arm/v7"
 default:
 	@just --list
 
-run *ARGS:
+# TODO: factor out into build scripts, share with dockerfile and github action
+lint:
+	go fmt ./...
+	go vet ./...
+	staticcheck -tags native ./...
+	golangci-lint run --build-tags native ./...
+	go test ./...
+
+run *ARGS: lint
 	go run . {{ARGS}}
 
 install:
