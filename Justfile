@@ -1,5 +1,5 @@
 containerImage := "docker.io/mtinside/pem2jwks"
-containerTag := "0.0.2" # TODO get from git tag
+containerTag := "0.0.3" # TODO get from git tag
 platforms := "linux/amd64,linux/arm64,linux/arm/v7"
 
 default:
