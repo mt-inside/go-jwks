@@ -179,18 +179,21 @@ func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
 		N string `json:"n"` // Modulus
 		E string `json:"e"` // Public exponent
 		D string `json:"d"` // Private exponent
-		// Primes - mandatory?
-		// Pre-computed values to speed stuff up. Mandatory in a JWK?
-		// Dp
-		// Dq
-		// Qinv
+		// Primes - mandatory? Is an array, unsure how to encode - decodes to binary, might just be concatinated if they're fixed-length?
 		// Q - emitted by npm "pem-jwk" but not in the go struct
+		// Pre-computed values to speed stuff up.
+		Dp   string `json:"dp"`
+		Dq   string `json:"dq"`
+		Qinv string `json:"qi"`
 	}{
 		KeyType: "RSA",
 		//Algorithm: // TODO: eg RS256. looks like we'll have to derive this string ourselves
-		N: base64.RawURLEncoding.EncodeToString(k.N.Bytes()),
-		E: base64.RawURLEncoding.EncodeToString(bufE),
-		D: base64.RawURLEncoding.EncodeToString(k.D.Bytes()),
+		N:    base64.RawURLEncoding.EncodeToString(k.N.Bytes()),
+		E:    base64.RawURLEncoding.EncodeToString(bufE),
+		D:    base64.RawURLEncoding.EncodeToString(k.D.Bytes()),
+		Dp:   base64.RawURLEncoding.EncodeToString(k.Precomputed.Dp.Bytes()),
+		Dq:   base64.RawURLEncoding.EncodeToString(k.Precomputed.Dq.Bytes()),
+		Qinv: base64.RawURLEncoding.EncodeToString(k.Precomputed.Qinv.Bytes()),
 	})
 }
 
