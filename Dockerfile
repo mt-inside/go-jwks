@@ -6,6 +6,8 @@
 FROM golang:1.18 AS build
 
 WORKDIR /go/github.com/mt-inside/pem2jwks
+COPY go.mod go.sum .
+RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 go install -ldflags="-extldflags=-static" .
 
