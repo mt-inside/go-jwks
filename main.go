@@ -152,8 +152,8 @@ func privKey(block *pem.Block) jwk {
 
 func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
 	bufE := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bufE, uint32(k.E))
-	bufE = bufE[:3] // TODO: JWK spec says nothing about truncating this, check RSA spec.
+	binary.LittleEndian.PutUint32(bufE, uint32(k.E)) // Seems to need to be little-endian to make the URL-encoded version ome out right
+	bufE = bufE[:determineLenE(k.E)]
 	return json.Marshal(&struct {
 		KeyType   string `json:"kty"`
 		Algorithm string `json:"alg"`
@@ -168,8 +168,8 @@ func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
 }
 func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
 	bufE := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bufE, uint32(k.E))
-	bufE = bufE[:3] // TODO: JWK spec says nothing about truncating this, check RSA spec.
+	binary.LittleEndian.PutUint32(bufE, uint32(k.E)) // Seems to need to be little-endian to make the URL-encoded version ome out right
+	bufE = bufE[:determineLenE(k.E)]
 	return json.Marshal(&struct {
 		KeyType   string `json:"kty"`
 		Algorithm string `json:"alg"`
@@ -192,6 +192,16 @@ func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
 		Dq:        base64.RawURLEncoding.EncodeToString(k.Precomputed.Dq.Bytes()),
 		Qinv:      base64.RawURLEncoding.EncodeToString(k.Precomputed.Qinv.Bytes()),
 	})
+}
+func determineLenE(e int) uint {
+	// https://www.ibm.com/docs/en/linux-on-systems?topic=formats-rsa-public-key-token
+	if e == 3 || e == 5 || e == 17 {
+		return 1
+	} else if e == 257 || e == 65537 {
+		return 3
+	} else {
+		return strconv.IntSize / 8
+	}
 }
 
 func (k *printableEcdsaPublicKey) MarshalJSON() ([]byte, error) {
