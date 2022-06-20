@@ -157,7 +157,7 @@ func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		KeyType   string `json:"kty"`
 		Algorithm string `json:"alg"`
-		N         string `json:"n"` // Modulus
+		N         string `json:"n"` // Modulus ie P * Q
 		E         string `json:"e"` // Public exponent
 	}{
 		KeyType:   "RSA",
@@ -173,12 +173,13 @@ func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		KeyType   string `json:"kty"`
 		Algorithm string `json:"alg"`
-		N         string `json:"n"` // Modulus
+		N         string `json:"n"` // Modulus ie P * Q
 		E         string `json:"e"` // Public exponent
 		D         string `json:"d"` // Private exponent
-		// Primes - mandatory? Is an array, unsure how to encode - decodes to binary, might just be concatinated if they're fixed-length?
-		// Q - emitted by npm "pem-jwk" but not in the go struct
 		// Pre-computed values to speed stuff up.
+		P string `json:"p"`
+		Q string `json:"q"`
+		// Primes - some other programmes (like npm pem-jwk) output a field called Primes which I guess contains P and Q but I can't work out the format of it
 		Dp   string `json:"dp"`
 		Dq   string `json:"dq"`
 		Qinv string `json:"qi"`
@@ -188,6 +189,8 @@ func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
 		N:         base64.RawURLEncoding.EncodeToString(k.N.Bytes()),
 		E:         base64.RawURLEncoding.EncodeToString(bufE),
 		D:         base64.RawURLEncoding.EncodeToString(k.D.Bytes()),
+		P:         base64.RawURLEncoding.EncodeToString(k.Primes[0].Bytes()),
+		Q:         base64.RawURLEncoding.EncodeToString(k.Primes[1].Bytes()),
 		Dp:        base64.RawURLEncoding.EncodeToString(k.Precomputed.Dp.Bytes()),
 		Dq:        base64.RawURLEncoding.EncodeToString(k.Precomputed.Dq.Bytes()),
 		Qinv:      base64.RawURLEncoding.EncodeToString(k.Precomputed.Qinv.Bytes()),
