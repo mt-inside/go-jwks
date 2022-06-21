@@ -37,8 +37,7 @@ type printableEd25519PrivateKey ed25519.PrivateKey
 func main() {
 	var opts struct {
 		Singleton bool `short:"1" long:"singleton" description:"Output only a single JWK rather than an array of them (a JWKS)"`
-		// TODO: https://datatracker.ietf.org/doc/html/rfc7517#appendix-A
-		Private bool `short:"p" long:"private" description:"Include private key parameters in output. If not specified then supplying a private key will extract just the public fields from it"`
+		Private   bool `short:"p" long:"private" description:"Include private key parameters in output. If not specified then supplying a private key will extract just the public fields from it"`
 	}
 	_, err := flags.Parse(&opts)
 	if err != nil {
@@ -99,7 +98,6 @@ func pubKey(block *pem.Block) jwk {
 		panic("input PEM does not encode a public key, certificate, or private key")
 	}
 
-	// TODO: do generics help??
 	var printableKey jwk
 	switch typedKey := key.(type) {
 	case *rsa.PublicKey:
@@ -133,7 +131,6 @@ func privKey(block *pem.Block) jwk {
 		panic("input PEM does not encode a private key")
 	}
 
-	// TODO: do generics help??
 	var printableKey jwk
 	switch typedKey := key.(type) {
 	case *rsa.PrivateKey:
@@ -179,7 +176,7 @@ func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
 		// Pre-computed values to speed stuff up.
 		P string `json:"p"`
 		Q string `json:"q"`
-		// Primes - some other programmes (like npm pem-jwk) output a field called Primes which I guess contains P and Q but I can't work out the format of it
+		// Primes - some other programmes (like npm pem-jwk) output a field called Primes which I guess contains P and Q but I can't work out the format of it. Ths actual spec just shows P and Q though.
 		Dp   string `json:"dp"`
 		Dq   string `json:"dq"`
 		Qinv string `json:"qi"`
