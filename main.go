@@ -148,8 +148,8 @@ func privKey(block *pem.Block) jwk {
 }
 
 func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
-	bufE := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bufE, uint32(k.E)) // Seems to need to be little-endian to make the URL-encoded version ome out right
+	bufE := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bufE, uint64(k.E)) // Seems to need to be little-endian to make the URL-encoded version ome out right
 	bufE = bufE[:determineLenE(k.E)]
 	return json.Marshal(&struct {
 		KeyType   string `json:"kty"`
@@ -164,8 +164,11 @@ func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
 	})
 }
 func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
-	bufE := make([]byte, 4)
-	binary.LittleEndian.PutUint32(bufE, uint32(k.E)) // Seems to need to be little-endian to make the URL-encoded version ome out right
+	if len(k.Primes) != 2 {
+		panic("Don't know how to deal with keys that don't have precisely 2 factors")
+	}
+	bufE := make([]byte, 8)
+	binary.LittleEndian.PutUint64(bufE, uint64(k.E)) // Seems to need to be little-endian to make the URL-encoded version ome out right
 	bufE = bufE[:determineLenE(k.E)]
 	return json.Marshal(&struct {
 		KeyType   string `json:"kty"`
