@@ -1,4 +1,4 @@
-package main
+package pem2jwks
 
 import (
 	"strconv"

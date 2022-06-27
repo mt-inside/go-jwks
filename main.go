@@ -1,38 +1,16 @@
 package main
 
 import (
-	"crypto"
-	"crypto/ecdsa"
-	"crypto/ed25519"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 
 	"github.com/jessevdk/go-flags"
+
+	"github.com/mt-inside/pem2jwks/pkg/pem2jwks"
 )
-
-type jwk interface {
-	MarshalJSON() ([]byte, error)
-}
-
-type jwks struct {
-	Keys []jwk `json:"keys"`
-}
-
-type printableRsaPublicKey rsa.PublicKey
-type printableEcdsaPublicKey ecdsa.PublicKey
-type printableEd25519PublicKey ed25519.PublicKey
-
-type printableRsaPrivateKey rsa.PrivateKey
-type printableEcdsaPrivateKey ecdsa.PrivateKey
-type printableEd25519PrivateKey ed25519.PrivateKey
 
 func main() {
 	var opts struct {
@@ -59,191 +37,33 @@ func main() {
 		bytes = rest
 	}
 
-	parseKey := pubKey
+	pem2Printable := pem2jwks.PublicPEM2Printable
 	if opts.Private {
-		parseKey = privKey
+		pem2Printable = pem2jwks.PrivatePEM2Printable
+	}
+
+	var keys pem2jwks.Jwks
+	for i, block := range blocks {
+		key, err := pem2Printable(block)
+		if err != nil {
+			fmt.Printf("Error in PEM block %d, skipping: %v\n", i, err)
+			continue
+		}
+		keys.Keys = append(keys.Keys, key)
 	}
 
 	if opts.Singleton {
-		if len(blocks) != 1 {
+		if len(keys.Keys) != 1 {
 			panic("--singleton requires input PEM containing precisely one key")
 		}
-		op(parseKey(blocks[0]))
+		render(keys.Keys[0])
 		os.Exit(0)
 	}
 
-	var keys jwks
-	for _, block := range blocks {
-		keys.Keys = append(keys.Keys, parseKey(block))
-	}
-	op(keys)
+	render(keys)
 }
 
-func pubKey(block *pem.Block) jwk {
-
-	var key crypto.PublicKey
-	if pubKey, err := x509.ParsePKIXPublicKey(block.Bytes); err == nil {
-		key = pubKey
-	} else if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
-		key = cert.PublicKey
-	} else if privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil { // RSA only; type *rsa.PrivateKey
-		key = privKey.Public()
-	} else if privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil { // OpenSSL 3+ default. RSA, ECDSA, Ed25519; type any, however: https://pkg.go.dev/crypto#PrivateKey
-		key = privKey.(interface {
-			Public() crypto.PublicKey
-		}).Public()
-	} else if privKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil { // ECDSA only; type *ecdsa.PrivateKey
-		key = privKey.Public()
-	} else {
-		panic("input PEM does not encode a public key, certificate, or private key")
-	}
-
-	var printableKey jwk
-	switch typedKey := key.(type) {
-	case *rsa.PublicKey:
-		printableKey = (*printableRsaPublicKey)(typedKey)
-	case *ecdsa.PublicKey:
-		printableKey = (*printableEcdsaPublicKey)(typedKey)
-	case ed25519.PublicKey: // Not a pointer *shrug*
-		printableKey = (printableEd25519PublicKey)(typedKey)
-		panic("JWK does not support Ed25519")
-	default:
-		panic(fmt.Sprintf("Unknown key type: %T", key))
-	}
-
-	return printableKey
-}
-
-func privKey(block *pem.Block) jwk {
-
-	var key crypto.PrivateKey // alias: any
-	if _, err := x509.ParsePKIXPublicKey(block.Bytes); err == nil {
-		panic("Need a private key; got a public")
-	} else if _, err := x509.ParseCertificate(block.Bytes); err == nil {
-		panic("Need a private key; got a cert")
-	} else if privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil { // RSA only; type *rsa.PrivateKey
-		key = privKey
-	} else if privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil { // RSA, ECDSA, Ed25519; type any, however: https://pkg.go.dev/crypto#PrivateKey
-		key = privKey
-	} else if privKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil { // ECDSA only; type *ecdsa.PrivateKey
-		key = privKey
-	} else {
-		panic("input PEM does not encode a private key")
-	}
-
-	var printableKey jwk
-	switch typedKey := key.(type) {
-	case *rsa.PrivateKey:
-		printableKey = (*printableRsaPrivateKey)(typedKey)
-	case *ecdsa.PrivateKey:
-		printableKey = (*printableEcdsaPrivateKey)(typedKey)
-	case ed25519.PrivateKey: // Not a pointer *shrug*
-		printableKey = (printableEd25519PrivateKey)(typedKey)
-		panic("JWK does not support Ed25519")
-	default:
-		panic(fmt.Sprintf("Unknown key type: %T", key))
-	}
-
-	return printableKey
-}
-
-func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
-	bufE := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bufE, uint64(k.E)) // Seems to need to be little-endian to make the URL-encoded version ome out right
-	bufE = bufE[:determineLenE(k.E)]
-	return json.Marshal(&struct {
-		KeyType   string `json:"kty"`
-		Algorithm string `json:"alg"`
-		N         string `json:"n"` // Modulus ie P * Q
-		E         string `json:"e"` // Public exponent
-	}{
-		KeyType:   "RSA",
-		Algorithm: "RS" + strconv.Itoa((*rsa.PublicKey)(k).Size()),
-		N:         base64.RawURLEncoding.EncodeToString(k.N.Bytes()),
-		E:         base64.RawURLEncoding.EncodeToString(bufE),
-	})
-}
-func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
-	if len(k.Primes) != 2 {
-		panic("Don't know how to deal with keys that don't have precisely 2 factors")
-	}
-	bufE := make([]byte, 8)
-	binary.LittleEndian.PutUint64(bufE, uint64(k.E)) // Seems to need to be little-endian to make the URL-encoded version ome out right
-	bufE = bufE[:determineLenE(k.E)]
-	return json.Marshal(&struct {
-		KeyType   string `json:"kty"`
-		Algorithm string `json:"alg"`
-		N         string `json:"n"` // Modulus ie P * Q
-		E         string `json:"e"` // Public exponent
-		D         string `json:"d"` // Private exponent
-		// Pre-computed values to speed stuff up.
-		P string `json:"p"`
-		Q string `json:"q"`
-		// Primes - some other programmes (like npm pem-jwk) output a field called Primes which I guess contains P and Q but I can't work out the format of it. Ths actual spec just shows P and Q though.
-		Dp   string `json:"dp"`
-		Dq   string `json:"dq"`
-		Qinv string `json:"qi"`
-	}{
-		KeyType:   "RSA",
-		Algorithm: "RS" + strconv.Itoa(k.Size()),
-		N:         base64.RawURLEncoding.EncodeToString(k.N.Bytes()),
-		E:         base64.RawURLEncoding.EncodeToString(bufE),
-		D:         base64.RawURLEncoding.EncodeToString(k.D.Bytes()),
-		P:         base64.RawURLEncoding.EncodeToString(k.Primes[0].Bytes()),
-		Q:         base64.RawURLEncoding.EncodeToString(k.Primes[1].Bytes()),
-		Dp:        base64.RawURLEncoding.EncodeToString(k.Precomputed.Dp.Bytes()),
-		Dq:        base64.RawURLEncoding.EncodeToString(k.Precomputed.Dq.Bytes()),
-		Qinv:      base64.RawURLEncoding.EncodeToString(k.Precomputed.Qinv.Bytes()),
-	})
-}
-func determineLenE(e int) uint {
-	// https://www.ibm.com/docs/en/linux-on-systems?topic=formats-rsa-public-key-token
-	if e == 3 || e == 5 || e == 17 {
-		return 1
-	} else if e == 257 || e == 65537 {
-		return 3
-	} else {
-		return strconv.IntSize / 8
-	}
-}
-
-func (k *printableEcdsaPublicKey) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&struct {
-		KeyType string `json:"kty"`
-		Curve   string `json:"crv"`
-		X       string `json:"x"`
-		Y       string `json:"y"`
-	}{
-		KeyType: "EC",
-		Curve:   k.Curve.Params().Name,
-		X:       base64.RawURLEncoding.EncodeToString(k.X.Bytes()),
-		Y:       base64.RawURLEncoding.EncodeToString(k.Y.Bytes()),
-	})
-}
-func (k *printableEcdsaPrivateKey) MarshalJSON() ([]byte, error) {
-	return json.Marshal(&struct {
-		KeyType string `json:"kty"`
-		Curve   string `json:"crv"`
-		X       string `json:"x"`
-		Y       string `json:"y"`
-		D       string `json:"d"`
-	}{
-		KeyType: "EC",
-		Curve:   k.Curve.Params().Name,
-		X:       base64.RawURLEncoding.EncodeToString(k.X.Bytes()),
-		Y:       base64.RawURLEncoding.EncodeToString(k.Y.Bytes()),
-		D:       base64.RawURLEncoding.EncodeToString(k.D.Bytes()),
-	})
-}
-
-func (k printableEd25519PublicKey) MarshalJSON() ([]byte, error) {
-	return nil, nil
-}
-func (k printableEd25519PrivateKey) MarshalJSON() ([]byte, error) {
-	return nil, nil
-}
-
-func op(d interface{}) {
+func render(d interface{}) {
 	op, err := json.Marshal(d)
 	if err != nil {
 		panic(err)
