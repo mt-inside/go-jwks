@@ -57,6 +57,7 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: |
-            #ghcr.io/mt-inside/pem2jwks:${{ github.ref }}
             ghcr.io/mt-inside/pem2jwks:test
             ghcr.io/mt-inside/pem2jwks:latest
+
+            #ghcr.io/mt-inside/pem2jwks:${{ github.ref }}
