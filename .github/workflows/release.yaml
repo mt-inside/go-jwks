@@ -1,12 +1,13 @@
-name: build
+name: release
 
-on:
-  push:
-    tags:
-      - 'v*.*.*'
+# on:
+#   push:
+#     tags:
+#       - 'v*.*.*'
+on: push
 
 jobs:
-  make_release:
+  binary:
     name: Build and upload binary
     runs-on: 'ubuntu-latest'
     steps:
