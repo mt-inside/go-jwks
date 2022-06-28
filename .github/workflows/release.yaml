@@ -18,7 +18,7 @@ jobs:
         run: go install .
 
       - name: Tets
-        run: "echo $GOPATH"
+        run: "go env"
 
       - name: Upload
         uses: softprops/action-gh-release@v1
