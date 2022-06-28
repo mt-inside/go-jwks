@@ -1,10 +1,10 @@
 name: release
 
-# on:
-#   push:
-#     tags:
-#       - 'v*.*.*'
-on: push
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+#on: push
 
 jobs:
   # TODO: multi-arch
@@ -27,9 +27,8 @@ jobs:
           files: "/home/runner/go/bin/pem2jwks"
           fail_on_unmatched_files: true
           generate_release_notes: true
-          tag_name: test
 
-  # TODO: dockerhub too
+  # TODO: dockerhub too - needs secret
   container:
     name: Build and upload container image
     runs-on: 'ubuntu-latest'
@@ -57,7 +56,6 @@ jobs:
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           push: true
           tags: |
-            ghcr.io/mt-inside/pem2jwks:test
+            ghcr.io/mt-inside/pem2jwks:${{ github.ref }}
             ghcr.io/mt-inside/pem2jwks:latest
 
-#ghcr.io/mt-inside/pem2jwks:${{ github.ref }}
