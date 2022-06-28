@@ -23,5 +23,5 @@ jobs:
       - name: Upload
         uses: softprops/action-gh-release@v1
         with:
-          files: "$HOME/go/bin/pem2jwks"
+          files: "/home/runner/go/bin/pem2jwks"
           tag_name: test
