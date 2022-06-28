@@ -31,7 +31,6 @@ jobs:
 
       - name: Upload
         uses: softprops/action-gh-release@v1
-        tag_name: test
         with:
           files: |
             "/home/runner/go/bin/pem2jwks-Linux-amd64"
@@ -39,6 +38,7 @@ jobs:
             "/home/runner/go/bin/pem2jwks-Linux-arm"
           fail_on_unmatched_files: true
           generate_release_notes: true
+          tag_name: test
 
   # TODO: dockerhub too - needs secret
   container:
