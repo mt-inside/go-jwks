@@ -1,21 +1,57 @@
 package pem2jwks
 
-import "encoding/pem"
+import (
+	"fmt"
+)
 
-func PublicPEM2Printable(block *pem.Block) (Jwk, error) {
-	key, err := ParsePublicKey(block)
-	if err != nil {
-		return nil, err
-	}
-
-	return PublicKey2Printable(key)
+type Jwks struct {
+	Keys []Jwk `json:"keys"`
 }
 
-func PrivatePEM2Printable(block *pem.Block) (Jwk, error) {
-	key, err := ParsePrivateKey(block)
+func PublicPEM2Printable(bytes []byte) (*Jwks, error) {
+	ders, err := ParsePEM(bytes)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
 	}
 
-	return PrivateKey2Printable(key)
+	keys := new(Jwks)
+	for i, der := range ders {
+		key, err := ParsePublicKey(der)
+		if err != nil {
+			return nil, fmt.Errorf("error in PEM block %d: %w", i, err)
+		}
+
+		printable, err := PublicKey2Printable(key)
+		if err != nil {
+			return nil, fmt.Errorf("error in key %d: %w", i, err)
+		}
+
+		keys.Keys = append(keys.Keys, printable)
+	}
+
+	return keys, nil
+}
+
+func PrivatePEM2Printable(bytes []byte) (*Jwks, error) {
+	ders, err := ParsePEM(bytes)
+	if err != nil {
+		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
+	}
+
+	keys := new(Jwks)
+	for i, der := range ders {
+		key, err := ParsePrivateKey(der)
+		if err != nil {
+			return nil, fmt.Errorf("error in PEM block %d: %w", i, err)
+		}
+
+		printable, err := PrivateKey2Printable(key)
+		if err != nil {
+			return nil, fmt.Errorf("error in key %d: %w", i, err)
+		}
+
+		keys.Keys = append(keys.Keys, printable)
+	}
+
+	return keys, nil
 }
