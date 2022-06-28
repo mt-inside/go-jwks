@@ -1,44 +1,22 @@
 package pem2jwks
 
 import (
-	"crypto"
-	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 )
 
-func ParsePublicKey(block *pem.Block) (crypto.PublicKey, error) {
+// ParsePEM extracts the set of byte blocks from a PEM "ascii-armoured" file.
+// These are expected to be DER encodings of cryptographic objects
+func ParsePEM(bytes []byte) ([][]byte, error) {
 
-	if pubKey, err := x509.ParsePKIXPublicKey(block.Bytes); err == nil {
-		return pubKey, nil
-	} else if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
-		return cert.PublicKey, nil
-	} else if privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil { // RSA only; type *rsa.PrivateKey
-		return privKey.Public(), nil
-	} else if privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil { // OpenSSL 3+ default. RSA, ECDSA, Ed25519; type any, however: https://pkg.go.dev/crypto#PrivateKey
-		return privKey.(interface {
-			Public() crypto.PublicKey
-		}).Public(), nil
-	} else if privKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil { // ECDSA only; type *ecdsa.PrivateKey
-		return privKey.Public(), nil
-	} else {
-		return nil, fmt.Errorf("input PEM does not encode a public key, certificate, or private key")
+	var blocks [][]byte
+	for len(bytes) != 0 {
+		block, rest := pem.Decode(bytes)
+		if block == nil {
+			return nil, fmt.Errorf("input doesn't decode as PEM")
+		}
+		blocks = append(blocks, block.Bytes)
+		bytes = rest
 	}
-}
-
-func ParsePrivateKey(block *pem.Block) (crypto.PrivateKey /* alias: any */, error) {
-
-	if _, err := x509.ParsePKIXPublicKey(block.Bytes); err == nil {
-		return nil, fmt.Errorf("need a private key; got a public")
-	} else if _, err := x509.ParseCertificate(block.Bytes); err == nil {
-		return nil, fmt.Errorf("need a private key; got a cert")
-	} else if privKey, err := x509.ParsePKCS1PrivateKey(block.Bytes); err == nil { // RSA only; type *rsa.PrivateKey
-		return privKey, nil
-	} else if privKey, err := x509.ParsePKCS8PrivateKey(block.Bytes); err == nil { // RSA, ECDSA, Ed25519; type any, however: https://pkg.go.dev/crypto#PrivateKey
-		return privKey, nil
-	} else if privKey, err := x509.ParseECPrivateKey(block.Bytes); err == nil { // ECDSA only; type *ecdsa.PrivateKey
-		return privKey, nil
-	} else {
-		return nil, fmt.Errorf("input PEM does not encode a private key")
-	}
+	return blocks, nil
 }

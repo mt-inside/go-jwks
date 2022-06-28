@@ -14,9 +14,7 @@ import (
 
 type Jwk json.Marshaler
 
-type Jwks struct {
-	Keys []Jwk `json:"keys"`
-}
+/* Lovely Go type mangling */
 
 func PublicKey2Printable(key crypto.PublicKey) (Jwk, error) {
 
@@ -46,11 +44,9 @@ func PrivateKey2Printable(key crypto.PrivateKey) (Jwk, error) {
 	}
 }
 
-type printableRsaPublicKey rsa.PublicKey
-type printableEcdsaPublicKey ecdsa.PublicKey
+/* Serialization */
 
-type printableRsaPrivateKey rsa.PrivateKey
-type printableEcdsaPrivateKey ecdsa.PrivateKey
+type printableRsaPublicKey rsa.PublicKey
 
 func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
 	bufE := make([]byte, 8)
@@ -68,6 +64,9 @@ func (k *printableRsaPublicKey) MarshalJSON() ([]byte, error) {
 		E:         base64.RawURLEncoding.EncodeToString(bufE),
 	})
 }
+
+type printableRsaPrivateKey rsa.PrivateKey
+
 func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
 	if len(k.Primes) != 2 {
 		return nil, fmt.Errorf("don't know how to deal with keys that don't have precisely 2 factors")
@@ -101,6 +100,7 @@ func (k *printableRsaPrivateKey) MarshalJSON() ([]byte, error) {
 		Qinv:      base64.RawURLEncoding.EncodeToString(k.Precomputed.Qinv.Bytes()),
 	})
 }
+
 func determineLenE(e int) uint {
 	// https://www.ibm.com/docs/en/linux-on-systems?topic=formats-rsa-public-key-token
 	if e == 3 || e == 5 || e == 17 {
@@ -111,6 +111,8 @@ func determineLenE(e int) uint {
 		return strconv.IntSize / 8
 	}
 }
+
+type printableEcdsaPublicKey ecdsa.PublicKey
 
 func (k *printableEcdsaPublicKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
@@ -125,6 +127,9 @@ func (k *printableEcdsaPublicKey) MarshalJSON() ([]byte, error) {
 		Y:       base64.RawURLEncoding.EncodeToString(k.Y.Bytes()),
 	})
 }
+
+type printableEcdsaPrivateKey ecdsa.PrivateKey
+
 func (k *printableEcdsaPrivateKey) MarshalJSON() ([]byte, error) {
 	return json.Marshal(&struct {
 		KeyType string `json:"kty"`

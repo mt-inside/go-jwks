@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"encoding/pem"
 	"fmt"
 	"io"
 	"os"
@@ -22,34 +21,19 @@ func main() {
 		panic(err)
 	}
 
-	bytes, err := io.ReadAll(os.Stdin)
-	if err != nil {
-		panic(err)
-	}
-
-	var blocks []*pem.Block
-	for len(bytes) != 0 {
-		block, rest := pem.Decode(bytes)
-		if block == nil {
-			panic("Input doesn't decode as PEM")
-		}
-		blocks = append(blocks, block)
-		bytes = rest
-	}
-
 	pem2Printable := pem2jwks.PublicPEM2Printable
 	if opts.Private {
 		pem2Printable = pem2jwks.PrivatePEM2Printable
 	}
 
-	var keys pem2jwks.Jwks
-	for i, block := range blocks {
-		key, err := pem2Printable(block)
-		if err != nil {
-			fmt.Printf("Error in PEM block %d, skipping: %v\n", i, err)
-			continue
-		}
-		keys.Keys = append(keys.Keys, key)
+	bytes, err := io.ReadAll(os.Stdin)
+	if err != nil {
+		panic(err)
+	}
+
+	keys, err := pem2Printable(bytes)
+	if err != nil {
+		panic(err)
 	}
 
 	if opts.Singleton {
