@@ -1,0 +1,22 @@
+name: build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  make_release:
+    name: Build and upload binary
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Build
+        run: go install .
+
+      - name: Upload
+        uses: softprops/action-gh-release@v1
+        with:
+          files: /go/bin/pem2jwks
