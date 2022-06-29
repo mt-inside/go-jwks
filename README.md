@@ -2,7 +2,7 @@
 
 Run from container image:
 ```bash
-cat key.pwm | docker run -i --rm ghcr.io/mt-inside/pem2jwks:latest
+cat key.pem | docker run -i --rm ghcr.io/mt-inside/pem2jwks:v0.0.7
 ```
 
 Download single, statically-linked binary
