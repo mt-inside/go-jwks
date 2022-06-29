@@ -14,32 +14,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Build-arm64
+      - name: build-linux-arm64
         run: GOOS="linux" GOARCH="arm64" go build .
-      - name: Hack-arm64
+      - name: move-linux-arm64
         run: mv pem2jwks pem2jwks-Linux-arm64
 
-      - name: Build-amd64
+      - name: build-linux-amd64
         run: GOOS="linux" GOARCH="amd64" go build .
-      - name: Hack-amd64
+      - name: move-linux-amd64
         run: mv pem2jwks pem2jwks-Linux-x86_64
 
-      - name: Build-arm
+      - name: build-linux-arm
         run: GOOS="linux" GOARCH="arm" go build .
-      - name: Hack-arm
+      - name: move-linux-arm
         run: mv pem2jwks pem2jwks-Linux-arm
-      - name: hack
-        run: find .
-      - name: hack2
-        run: pwd -P
+
+      - name: build-macos-arm64
+        run: GOOS="darwin" GOARCH="arm64" go build .
+      - name: move-macos-arm64
+        run: mv pem2jwks pem2jwks-Darwin-arm64
+
+      - name: build-macos-amd64
+        run: GOOS="darwin" GOARCH="amd64" go build .
+      - name: move-macos-amd64
+        run: mv pem2jwks pem2jwks-Darwin-x86_64
 
       - name: Upload
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-x86_64
             /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm64
+            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-x86_64
             /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm
+            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Darwin-arm64
+            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Darwin-x86_64
           fail_on_unmatched_files: true
           generate_release_notes: true
           tag_name: test
