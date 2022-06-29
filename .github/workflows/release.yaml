@@ -28,6 +28,10 @@ jobs:
         run: GOOS="linux" GOARCH="arm" go build .
       - name: Hack-arm
         run: mv pem2jwks pem2jwks-Linux-arm
+      - name: hack
+        run: find .
+      - name: hack2
+        run: pwd -P
 
       - name: Upload
         uses: softprops/action-gh-release@v1
