@@ -16,26 +16,30 @@ jobs:
 
       - name: Build-arm64
         run: GOOS="linux" GOARCH="arm64" go build .
+      - name: hack
+        run: ls -al
+      - name: hack2
+        run: pwd -P
       - name: Hack-arm64
-        run: mv pem2jwks /home/runner/go/bin/pem2jwks-Linux-arm64
+        run: mv pem2jwks pem2jwks-Linux-arm64
 
       - name: Build-amd64
         run: GOOS="linux" GOARCH="amd64" go build .
       - name: Hack-amd64
-        run: mv pem2jwks /home/runner/go/bin/pem2jwks-Linux-x86_64
+        run: mv pem2jwks pem2jwks-Linux-x86_64
 
       - name: Build-arm
         run: GOOS="linux" GOARCH="arm" go build .
       - name: Hack-arm
-        run: mv pem2jwks /home/runner/go/bin/pem2jwks-Linux-arm
+        run: mv pem2jwks pem2jwks-Linux-arm
 
       - name: Upload
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            "/home/runner/go/bin/pem2jwks-Linux-amd64"
-            "/home/runner/go/bin/pem2jwks-Linux-arm64"
-            "/home/runner/go/bin/pem2jwks-Linux-arm"
+            "pem2jwks-Linux-amd64"
+            "pem2jwks-Linux-arm64"
+            "pem2jwks-Linux-arm"
           fail_on_unmatched_files: true
           generate_release_notes: true
           tag_name: test
