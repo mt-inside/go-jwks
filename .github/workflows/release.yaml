@@ -37,7 +37,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            "/home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-amd64"
+            "/home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-x86_64"
             "/home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm64"
             "/home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm"
           fail_on_unmatched_files: true
