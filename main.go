@@ -16,15 +16,17 @@ func main() {
 		Singleton bool `short:"1" long:"singleton" description:"Output only a single JWK rather than an array of them (a JWKS)"`
 		Private   bool `short:"p" long:"private" description:"Include private key parameters in output. If not specified then supplying a private key will extract just the public fields from it"`
 	}
-	rest, err := flags.Parse(&opts)
+	flagParser := flags.NewParser(&opts, flags.Default)
+	rest, err := flagParser.Parse()
 	if err != nil {
 		if flags.WroteHelp(err) {
 			os.Exit(2)
 		}
-		panic(err)
+		os.Exit(1)
 	}
 	if len(rest) != 0 {
-		panic("no positional arguments are accepted")
+		flagParser.WriteHelp(os.Stdout)
+		os.Exit(2)
 	}
 
 	pem2Printable := pem2jwks.PublicPEM2Printable
