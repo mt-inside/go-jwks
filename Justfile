@@ -2,8 +2,8 @@ default:
 	@just --list
 
 containerRepo := "docker.io/mtinside/pem2jwks"
-containerTag  := `git describe --tag --abbrev`
-buildVersion  := `git describe --tag --abbrev --dirty`
+cleanVersion  := `git describe --tags --always --abbrev=0`
+verboseVersion  := `git describe --tags --always --abbrev --dirty --broken`
 platforms     := "linux/amd64,linux/arm64,linux/arm/v7"
 
 tools-install:
@@ -30,10 +30,10 @@ install:
 	go install .
 
 image-build-local:
-	docker buildx build --build-arg VERSION={{buildVersion}} -t {{containerRepo}}:{{containerTag}} -t {{containerRepo}}:latest --load .
+	docker buildx build --build-arg VERSION={{verboseVersion}} -t {{containerRepo}}:{{cleanVersion}} -t {{containerRepo}}:latest --load .
 image-publish:
-	docker buildx build --platform={{platforms}} --build-arg VERSION={{buildVersion}} -t {{containerRepo}}:{{containerTag}} -t {{containerRepo}}:latest --push .
+	docker buildx build --platform={{platforms}} --build-arg VERSION={{verboseVersion}} -t {{containerRepo}}:{{cleanVersion}} -t {{containerRepo}}:latest --push .
 image-ls:
 	hub-tool tag ls --platforms {{containerRepo}}
 image-inspect:
-	docker buildx imagetools inspect {{containerRepo}}:{{containerTag}}
+	docker buildx imagetools inspect {{containerRepo}}:{{cleanVersion}}
