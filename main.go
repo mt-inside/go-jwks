@@ -8,13 +8,16 @@ import (
 
 	"github.com/jessevdk/go-flags"
 
+	"github.com/mt-inside/pem2jwks/pkg/build"
 	"github.com/mt-inside/pem2jwks/pkg/pem2jwks"
 )
 
 func main() {
+
 	var opts struct {
 		Singleton bool `short:"1" long:"singleton" description:"Output only a single JWK rather than an array of them (a JWKS)"`
 		Private   bool `short:"p" long:"private" description:"Include private key parameters in output. If not specified then supplying a private key will extract just the public fields from it"`
+		Version   bool `short:"v" long:"version" description:"Print version information and exit"`
 	}
 	flagParser := flags.NewParser(&opts, flags.Default)
 	rest, err := flagParser.Parse()
@@ -27,6 +30,10 @@ func main() {
 	if len(rest) != 0 {
 		flagParser.WriteHelp(os.Stdout)
 		os.Exit(2)
+	}
+	if opts.Version {
+		fmt.Println(build.Name, build.Version)
+		os.Exit(0)
 	}
 
 	pem2Printable := pem2jwks.PublicPEM2Printable
