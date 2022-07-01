@@ -14,40 +14,40 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: build-linux-amd64
+        run: GOOS="linux" GOARCH="amd64" go build -ldflags="-w -extldflags '-static' -X 'github.com/mt-inside/pem2jwks/pkg/build.Version="${{ github.ref_name }}"'" .
+      - name: move-linux-amd64
+        run: mv pem2jwks pem2jwks-Linux-x86_64
+
       - name: build-linux-arm64
         run: GOOS="linux" GOARCH="arm64" go build -ldflags="-w -extldflags '-static' -X 'github.com/mt-inside/pem2jwks/pkg/build.Version="${{ github.ref_name }}"'" .
       - name: move-linux-arm64
         run: mv pem2jwks pem2jwks-Linux-arm64
 
-      - name: build-linux-amd64
-        run: GOOS="linux" GOARCH="amd64" go build .
-      - name: move-linux-amd64
-        run: mv pem2jwks pem2jwks-Linux-x86_64
-
       - name: build-linux-arm
-        run: GOOS="linux" GOARCH="arm" go build .
+        run: GOOS="linux" GOARCH="arm" go build -ldflags="-w -extldflags '-static' -X 'github.com/mt-inside/pem2jwks/pkg/build.Version="${{ github.ref_name }}"'" .
       - name: move-linux-arm
         run: mv pem2jwks pem2jwks-Linux-arm
+
+      - name: build-macos-amd64
+        run: GOOS="darwin" GOARCH="amd64" go build -ldflags="-w -extldflags '-static' -X 'github.com/mt-inside/pem2jwks/pkg/build.Version="${{ github.ref_name }}"'" .
+      - name: move-macos-amd64
+        run: mv pem2jwks pem2jwks-Darwin-x86_64
 
       - name: build-macos-arm64
         run: GOOS="darwin" GOARCH="arm64" go build -ldflags="-w -extldflags '-static' -X 'github.com/mt-inside/pem2jwks/pkg/build.Version="${{ github.ref_name }}"'" .
       - name: move-macos-arm64
         run: mv pem2jwks pem2jwks-Darwin-arm64
 
-      - name: build-macos-amd64
-        run: GOOS="darwin" GOARCH="amd64" go build .
-      - name: move-macos-amd64
-        run: mv pem2jwks pem2jwks-Darwin-x86_64
-
       - name: Upload
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm64
             /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-x86_64
+            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm64
             /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm
-            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Darwin-arm64
             /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Darwin-x86_64
+            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Darwin-arm64
           fail_on_unmatched_files: true
           generate_release_notes: true
           # tag_name: test
