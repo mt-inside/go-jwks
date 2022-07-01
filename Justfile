@@ -7,15 +7,20 @@ buildTag      := `git describe --tag --abbrev --dirty`
 platforms := "linux/amd64,linux/arm64,linux/arm/v7"
 
 install-tools:
-	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	go install honnef.co/go/tools/cmd/staticcheck@latest
+	bingo get
+
+update-tool-pins:
+	bingo get staticcheck@latest
+	bingo get golangci-lint@latest
 
 # TODO: factor out into build scripts, share with dockerfile and github action
-lint:
+lint: install-tools
+	#!/usr/bin/env bash
+	source .bingo/variables.env
 	go fmt ./...
 	go vet ./...
-	staticcheck -tags native ./...
-	golangci-lint run --build-tags native ./...
+	${STATICCHECK} -tags native ./...
+	${GOLANGCI_LINT} run --build-tags native ./...
 	go test ./...
 
 run *ARGS: lint
