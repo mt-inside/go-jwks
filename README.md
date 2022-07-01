@@ -1,4 +1,4 @@
-# 📜 pem2jwks 🏦
+# pem2jwks 📜➡️🏦
 
 pem2jwks converts public keys in PEM format (typically used to _sign_ JWTs) to the JWKS format usually required by software that _validates_ them.
 
@@ -30,3 +30,7 @@ Application Options:
   -p, --private    Include private key parameters in output. If not specified then supplying a private key will
                    extract just the public fields from it
 ```
+
+## Alternatives
+* [pem-to-jwk](https://github.com/callstats-io/pem-to-jwk) - JavaScript, last commit in 2016, uses string manipulation. Only works on EC keys? Only takes private keys as input? Only emits individual JWKs.
+* [pem-jwk](https://github.com/dannycoates/pem-jwk) - JavaScript, last commit in 2018, uses string manipulation. Only works on RSA keys? Only takes public keys? Only emits individual JWKs.
