@@ -1,4 +1,4 @@
-# pem2jwks 📜➡️🏦
+# 📜➡️🏦 pem2jwks
 
 pem2jwks converts public keys in PEM format (typically used to _sign_ JWTs) to the JWKS format usually required by software that _validates_ them.
 
@@ -6,17 +6,20 @@ pem2jwks converts public keys in PEM format (typically used to _sign_ JWTs) to t
 
 Run from container image:
 ```bash
-cat key.pem | docker run -i --rm ghcr.io/mt-inside/pem2jwks:v0.0.7
+cat key.pem | docker run -i --rm ghcr.io/mt-inside/pem2jwks:latest
 ```
 
 Download single, statically-linked binary
 ```bash
-curl --output pem2jwks https://github.com/mt-inside/pem2jwks/releases/download/v0.0.7/pem2jwks-$(uname -s)-$(uname -m)
+wget -O pem2jwks https://github.com/mt-inside/pem2jwks/releases/download/v0.0.10/pem2jwks-$(uname -s)-$(uname -m)
+chmod u+x pem2jwks
+cat key.pem | ./pem2jwks
 ```
 
 Install from source
 ```bash
 go install github.com/mt-inside/pem2jwks@latest
+cat key.pem | ${GOPATH}/bin/pem2jwks
 ```
 
 ## Options
