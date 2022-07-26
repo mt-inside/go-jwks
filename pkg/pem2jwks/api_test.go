@@ -3,6 +3,8 @@ package pem2jwks
 import (
 	"encoding/json"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 var publics = []struct {
@@ -200,35 +202,23 @@ AwEHoUQDQgAE0E8sVCMWXqO6PAnNpn2AXbAx+z91k32ycSMomhEi9LeeIAXSm9sF
 func TestPublics(t *testing.T) {
 	for _, cse := range publics {
 		obj, err := PublicPEM2Printable(cse.pem)
-		if err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
+		require.NoError(t, err)
 
 		rendered, err := json.Marshal(obj)
-		if err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
+		require.NoError(t, err)
 
-		if string(rendered) != cse.jwks {
-			t.Errorf("JWKS for crypto object doesn't match expected struct")
-		}
+		require.Equal(t, cse.jwks, string(rendered), "JWKS for crypto object doesn't match expected object")
 	}
 }
 
 func TestPrivates(t *testing.T) {
 	for _, cse := range privates {
 		obj, err := PrivatePEM2Printable(cse.pem)
-		if err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
+		require.NoError(t, err)
 
 		rendered, err := json.Marshal(obj)
-		if err != nil {
-			t.Errorf("Unexpected error: %v", err)
-		}
+		require.NoError(t, err)
 
-		if string(rendered) != cse.jwks {
-			t.Errorf("JWKS for crypto object doesn't match expected struct")
-		}
+		require.Equal(t, cse.jwks, string(rendered), "JWKS for crypto object doesn't match expected object")
 	}
 }
