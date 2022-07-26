@@ -3,6 +3,8 @@ package pem2jwks
 import (
 	"strconv"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDetermineLenE(t *testing.T) {
@@ -20,8 +22,6 @@ func TestDetermineLenE(t *testing.T) {
 
 	for _, cse := range cases {
 		got := determineLenE(cse.e)
-		if got != cse.expected {
-			t.Errorf("Field len calculation for E==%d: got %d, expected %d.", cse.e, got, cse.expected)
-		}
+		require.Equal(t, cse.expected, got, "Field len calculation for E==%d", cse.e)
 	}
 }
