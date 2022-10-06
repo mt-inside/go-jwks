@@ -7,20 +7,16 @@ verboseVersion  := `git describe --tags --always --abbrev --dirty --broken`
 platforms     := "linux/amd64,linux/arm64,linux/arm/v7"
 
 tools-install:
-	bingo get
-
-tools-update-pins:
-	bingo get staticcheck@latest
-	bingo get golangci-lint@latest
+	go install honnef.co/go/tools/cmd/staticcheck@latest
+	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	go install golang.org/x/tools/cmd/goimports@latest
 
 # TODO: factor out into build scripts, share with dockerfile and github action
 lint: tools-install
-	#!/usr/bin/env bash
-	source .bingo/variables.env
 	go fmt ./...
 	go vet ./...
-	${STATICCHECK} -tags native ./...
-	${GOLANGCI_LINT} run --build-tags native ./...
+	staticcheck -tags native ./...
+	golangci-lint run --build-tags native ./...
 	go test ./...
 
 run *ARGS: lint
