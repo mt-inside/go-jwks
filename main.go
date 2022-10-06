@@ -8,7 +8,7 @@ import (
 
 	"github.com/jessevdk/go-flags"
 
-	"github.com/mt-inside/pem2jwks/pkg/build"
+	"github.com/mt-inside/pem2jwks/internal/build"
 	"github.com/mt-inside/pem2jwks/pkg/pem2jwks"
 )
 

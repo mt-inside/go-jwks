@@ -10,7 +10,7 @@ WORKDIR /go/github.com/mt-inside/pem2jwks
 COPY go.mod go.sum .
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 go install -ldflags="-w -extldflags '-static' -X 'github.com/mt-inside/pem2jwks/pkg/build.Version="${VERSION}"'" .
+RUN CGO_ENABLED=0 go install -ldflags="-w -extldflags '-static' -X 'github.com/mt-inside/pem2jwks/internal/build.Version="${VERSION}"'" .
 
 FROM scratch AS run
 COPY --from=build /go/bin/pem2jwks /
