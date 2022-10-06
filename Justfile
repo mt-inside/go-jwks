@@ -22,8 +22,11 @@ lint: tools-install
 run *ARGS: lint
 	go run . {{ARGS}}
 
-install:
-	go install .
+build: lint
+	go build -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="{{verboseVersion}}"'" .
+
+install: lint
+	go install -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="${VERSION}"'" .
 
 image-build-local:
 	docker buildx build --build-arg VERSION={{verboseVersion}} -t {{containerRepo}}:{{cleanVersion}} -t {{containerRepo}}:latest --load .
