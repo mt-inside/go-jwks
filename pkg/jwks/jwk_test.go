@@ -1,4 +1,4 @@
-package pem2jwks
+package jwks
 
 import (
 	"strconv"
@@ -24,4 +24,8 @@ func TestDetermineLenE(t *testing.T) {
 		got := determineLenE(cse.e)
 		require.Equal(t, cse.expected, got, "Field len calculation for E==%d", cse.e)
 	}
+}
+
+func TestRsaPublicKeyUnmarshal(t *testing.T) {
+	// have the key as pem-encoded, parse it in, compare to text source
 }

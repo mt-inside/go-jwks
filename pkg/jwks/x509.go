@@ -1,4 +1,4 @@
-package pem2jwks
+package jwks
 
 import (
 	"crypto"
@@ -9,9 +9,9 @@ import (
 // ParsePublicKey extracts the public key from the given cryptographic object.
 // That object is expected to be the DER encoding of:
 // * an x509 encoding (ie ASN.1 serialization) of a public key
-// * a PKCS#1 (ie ASN.1 encoding) containing a public key
+// * a PKCS#1 (ie ASN.1 encoding) containing a public key, RSA-only
 // * an x509 encoding (ie ASN.1 serialization) of a certificate
-// * a PKCS#1 (ie ASN.1 encoding) containing a private key
+// * a PKCS#1 (ie ASN.1 encoding) containing a private key, RSA-only
 // * a PKCS#8 (ie ASN.1 encoding) containing a private key
 // * a SEC 1 (ie ASN.1 encoding) containing an EC private key
 func ParsePublicKey(der []byte) (crypto.PublicKey, error) {
@@ -35,6 +35,11 @@ func ParsePublicKey(der []byte) (crypto.PublicKey, error) {
 	}
 }
 
+func RenderPublicKey(key crypto.PublicKey) ([]byte, error) {
+	// We chose to represent all public keys as PKIX ASN.1 DER. This is openssl 3.1.2's default for all of them anyway.
+	return x509.MarshalPKIXPublicKey(key)
+}
+
 func ParsePrivateKey(der []byte) (crypto.PrivateKey /* alias: any */, error) {
 
 	if _, err := x509.ParsePKIXPublicKey(der); err == nil {
@@ -52,4 +57,9 @@ func ParsePrivateKey(der []byte) (crypto.PrivateKey /* alias: any */, error) {
 	} else {
 		return nil, fmt.Errorf("DER block does not encode a recognised cryptographic object")
 	}
+}
+
+func RenderPrivateKey(key crypto.PrivateKey) ([]byte, error) {
+	// We chose to represent all private keys as PKCS#8 ASN.1 DER. This is openssl 3.1.2's default for all of them except ecdsa (where it uses SEC1) but wanna keep it consistent
+	return x509.MarshalPKCS8PrivateKey(key)
 }
