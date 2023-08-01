@@ -1,3 +1,7 @@
+/*
+* pem2jwks
+* This is the root command, so it's an easy `go install .../mt-inside/pem2jwks`
+ */
 package main
 
 import (
@@ -9,7 +13,7 @@ import (
 	"github.com/jessevdk/go-flags"
 
 	"github.com/mt-inside/pem2jwks/internal/build"
-	"github.com/mt-inside/pem2jwks/pkg/pem2jwks"
+	"github.com/mt-inside/pem2jwks/pkg/jwks"
 )
 
 func main() {
@@ -36,9 +40,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	pem2Printable := pem2jwks.PublicPEM2Printable
+	pem2Printable := jwks.PublicPEM2Marshaler
 	if opts.Private {
-		pem2Printable = pem2jwks.PrivatePEM2Printable
+		pem2Printable = jwks.PrivatePEM2Marshaler
 	}
 
 	bytes, err := io.ReadAll(os.Stdin)
