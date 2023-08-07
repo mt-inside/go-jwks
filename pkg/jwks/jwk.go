@@ -86,12 +86,12 @@ func PrivateKey2JSON(key crypto.PrivateKey) (string, error) {
 // JSON -> crypto.Key
 // ===
 
-type JSONPublicKey struct {
+type jsonPublicKey struct {
 	KeyId string
 	Key   crypto.PublicKey
 }
 
-func (p *JSONPublicKey) UnmarshalJSON(data []byte) error {
+func (p *jsonPublicKey) UnmarshalJSON(data []byte) error {
 	protoKey := struct {
 		KeyId   string `json:"kid,omitempty"`
 		KeyType string `json:"kty"`
@@ -125,17 +125,17 @@ func (p *JSONPublicKey) UnmarshalJSON(data []byte) error {
 }
 
 func JSON2PublicKey(data []byte) (crypto.PublicKey, error) {
-	u := &JSONPublicKey{}
+	u := &jsonPublicKey{}
 	err := u.UnmarshalJSON(data)
 	return u.Key, err
 }
 
-type JSONPrivateKey struct {
+type jsonPrivateKey struct {
 	KeyId string
 	Key   crypto.PrivateKey
 }
 
-func (p *JSONPrivateKey) UnmarshalJSON(data []byte) error {
+func (p *jsonPrivateKey) UnmarshalJSON(data []byte) error {
 	protoKey := struct {
 		KeyId   string `json:"kid,omitempty"`
 		KeyType string `json:"kty"`
@@ -169,7 +169,7 @@ func (p *JSONPrivateKey) UnmarshalJSON(data []byte) error {
 }
 
 func JSON2PrivateKey(data []byte) (crypto.PrivateKey, error) {
-	u := &JSONPrivateKey{}
+	u := &jsonPrivateKey{}
 	err := u.UnmarshalJSON(data)
 	return u.Key, err
 }
