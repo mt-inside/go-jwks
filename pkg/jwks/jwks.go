@@ -14,15 +14,16 @@ import (
 // On naming:
 // * PEN is singular - you don't have multiple PEMs, you have multiple blocks in one PEM
 
+// TODO: why isn't the marshal and unmarshal type the same? Is it KeyId? Should be used tbh.
 type Jwks struct {
-	Keys []json.Marshaler `json:"keys"`
+	Keys []Jwk `json:"keys"`
 }
 
 // ===
 // PEM -> JSON
 // ===
 
-func PEM2MarshalerPublic(p []byte) (*Jwks, error) {
+func PEM2JWKSMarshalerPublic(p []byte) (*Jwks, error) {
 	ders, err := parsePEM(p)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
@@ -39,13 +40,13 @@ func PEM2MarshalerPublic(p []byte) (*Jwks, error) {
 		keys = append(keys, key)
 	}
 
-	return Keys2MarshalerPublic(keys)
+	return Keys2JWKSMarshalerPublic(keys)
 }
 func PEM2JWKSPublic(p []byte) (string, error) {
-	return marshaler2JSON(p, PEM2MarshalerPublic)
+	return marshaler2JSON(p, PEM2JWKSMarshalerPublic)
 }
 
-func PEM2MarshalerPrivate(p []byte) (*Jwks, error) {
+func PEM2JWKSMarshalerPrivate(p []byte) (*Jwks, error) {
 	ders, err := parsePEM(p)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
@@ -62,21 +63,21 @@ func PEM2MarshalerPrivate(p []byte) (*Jwks, error) {
 		keys = append(keys, key)
 	}
 
-	return Keys2MarshalerPrivate(keys)
+	return Keys2JWKSMarshalerPrivate(keys)
 }
 func PEM2JWKSPrivate(p []byte) (string, error) {
-	return marshaler2JSON(p, PEM2MarshalerPrivate)
+	return marshaler2JSON(p, PEM2JWKSMarshalerPrivate)
 }
 
 // ===
 // crypto.Key -> JSON
 // ===
 
-func Keys2MarshalerPublic(ks []crypto.PublicKey) (*Jwks, error) {
+func Keys2JWKSMarshalerPublic(ks []crypto.PublicKey) (*Jwks, error) {
 	js := new(Jwks)
 
 	for i, k := range ks {
-		printable, err := Key2MarshalerPublic(k)
+		printable, err := Key2JWKMarshalerPublic(k)
 		if err != nil {
 			return nil, fmt.Errorf("error in key %d: %w", i, err)
 		}
@@ -87,14 +88,14 @@ func Keys2MarshalerPublic(ks []crypto.PublicKey) (*Jwks, error) {
 	return js, nil
 }
 func Keys2JWKSPublic(ks []crypto.PublicKey) (string, error) {
-	return marshaler2JSON(ks, Keys2MarshalerPublic)
+	return marshaler2JSON(ks, Keys2JWKSMarshalerPublic)
 }
 
-func Keys2MarshalerPrivate(ks []crypto.PrivateKey) (*Jwks, error) {
+func Keys2JWKSMarshalerPrivate(ks []crypto.PrivateKey) (*Jwks, error) {
 	js := new(Jwks)
 
 	for i, k := range ks {
-		printable, err := Key2MarshalerPrivate(k)
+		printable, err := Key2JWKMarshalerPrivate(k)
 		if err != nil {
 			return nil, fmt.Errorf("error in key %d: %w", i, err)
 		}
@@ -105,7 +106,7 @@ func Keys2MarshalerPrivate(ks []crypto.PrivateKey) (*Jwks, error) {
 	return js, nil
 }
 func Keys2JWKSPrivate(ks []crypto.PrivateKey) (string, error) {
-	return marshaler2JSON(ks, Keys2MarshalerPrivate)
+	return marshaler2JSON(ks, Keys2JWKSMarshalerPrivate)
 }
 
 // ===
