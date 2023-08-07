@@ -50,8 +50,8 @@ import (
 // crypto.Key -> JSON
 // ===
 
-func PublicKey2Marshaler(key crypto.PublicKey) (json.Marshaler, error) {
-	switch typedKey := key.(type) {
+func Key2MarshalerPublic(k crypto.PublicKey) (json.Marshaler, error) {
+	switch typedKey := k.(type) {
 	case *rsa.PublicKey:
 		return (*printableRsaPublicKey)(typedKey), nil
 	case *ecdsa.PublicKey:
@@ -59,15 +59,15 @@ func PublicKey2Marshaler(key crypto.PublicKey) (json.Marshaler, error) {
 	case ed25519.PublicKey: // Not a pointer *shrug*
 		return nil, fmt.Errorf("JWK does not support Ed25519")
 	default:
-		return nil, fmt.Errorf("unknown key type: %T", key)
+		return nil, fmt.Errorf("unknown key type: %T", k)
 	}
 }
-func PublicKey2JSON(key crypto.PublicKey) (string, error) {
-	return marshaler2JSON(key, PublicKey2Marshaler)
+func Key2JWKPublic(k crypto.PublicKey) (string, error) {
+	return marshaler2JSON(k, Key2MarshalerPublic)
 }
 
-func PrivateKey2Marshaler(key crypto.PrivateKey) (json.Marshaler, error) {
-	switch typedKey := key.(type) {
+func Key2MarshalerPrivate(k crypto.PrivateKey) (json.Marshaler, error) {
+	switch typedKey := k.(type) {
 	case *rsa.PrivateKey:
 		return (*printableRsaPrivateKey)(typedKey), nil
 	case *ecdsa.PrivateKey:
@@ -75,23 +75,24 @@ func PrivateKey2Marshaler(key crypto.PrivateKey) (json.Marshaler, error) {
 	case ed25519.PrivateKey: // Not a pointer *shrug*
 		return nil, fmt.Errorf("JWK does not support Ed25519")
 	default:
-		return nil, fmt.Errorf("unknown key type: %T", key)
+		return nil, fmt.Errorf("unknown key type: %T", k)
 	}
 }
-func PrivateKey2JSON(key crypto.PrivateKey) (string, error) {
-	return marshaler2JSON(key, PrivateKey2Marshaler)
+func Key2JWKPrivate(k crypto.PrivateKey) (string, error) {
+	return marshaler2JSON(k, Key2MarshalerPrivate)
 }
 
 // ===
 // JSON -> crypto.Key
 // ===
 
-type jsonPublicKey struct {
+// TODO: make all the examples of embedding these in other structs etc, cause this might need to be public?
+type jwkPublic struct {
 	KeyId string
 	Key   crypto.PublicKey
 }
 
-func (p *jsonPublicKey) UnmarshalJSON(data []byte) error {
+func (p *jwkPublic) UnmarshalJSON(data []byte) error {
 	protoKey := struct {
 		KeyId   string `json:"kid,omitempty"`
 		KeyType string `json:"kty"`
@@ -124,18 +125,18 @@ func (p *jsonPublicKey) UnmarshalJSON(data []byte) error {
 	}
 }
 
-func JSON2PublicKey(data []byte) (crypto.PublicKey, error) {
-	u := &jsonPublicKey{}
-	err := u.UnmarshalJSON(data)
+func JWK2KeyPublic(j []byte) (crypto.PublicKey, error) {
+	u := &jwkPublic{}
+	err := u.UnmarshalJSON(j)
 	return u.Key, err
 }
 
-type jsonPrivateKey struct {
+type jwkPrivate struct {
 	KeyId string
 	Key   crypto.PrivateKey
 }
 
-func (p *jsonPrivateKey) UnmarshalJSON(data []byte) error {
+func (p *jwkPrivate) UnmarshalJSON(data []byte) error {
 	protoKey := struct {
 		KeyId   string `json:"kid,omitempty"`
 		KeyType string `json:"kty"`
@@ -168,9 +169,9 @@ func (p *jsonPrivateKey) UnmarshalJSON(data []byte) error {
 	}
 }
 
-func JSON2PrivateKey(data []byte) (crypto.PrivateKey, error) {
-	u := &jsonPrivateKey{}
-	err := u.UnmarshalJSON(data)
+func JWK2KeyPrivate(j []byte) (crypto.PrivateKey, error) {
+	u := &jwkPrivate{}
+	err := u.UnmarshalJSON(j)
 	return u.Key, err
 }
 
