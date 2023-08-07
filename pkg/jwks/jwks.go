@@ -109,12 +109,12 @@ func PrivateKeys2JSON(keys []crypto.PrivateKey) (string, error) {
 // JSON -> crypto.Key
 // ===
 
-type JSONPublicJwks struct {
-	Keys []JSONPublicKey `json:"keys"`
+type jsonPublicJwks struct {
+	Keys []jsonPublicKey `json:"keys"`
 }
 
 func JSON2PublicKeys(data []byte) (map[string]crypto.PublicKey, error) {
-	ks := &JSONPublicJwks{}
+	ks := &jsonPublicJwks{}
 	err := json.Unmarshal(data, ks)
 	if err != nil {
 		return nil, err
@@ -135,12 +135,12 @@ func JSON2PublicKeys(data []byte) (map[string]crypto.PublicKey, error) {
 	return ksm, nil
 }
 
-type JSONPrivateJwks struct {
-	Keys []JSONPrivateKey `json:"keys"`
+type jsonPrivateJwks struct {
+	Keys []jsonPrivateKey `json:"keys"`
 }
 
 func JSON2PrivateKeys(data []byte) (map[string]crypto.PrivateKey, error) {
-	ks := &JSONPrivateJwks{}
+	ks := &jsonPrivateJwks{}
 	err := json.Unmarshal(data, ks)
 	if err != nil {
 		return nil, err
