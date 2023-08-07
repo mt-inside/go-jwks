@@ -40,9 +40,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	pem2Printable := jwks.PublicPEM2Marshaler
+	pem2Printable := jwks.PEM2MarshalerPublic
 	if opts.Private {
-		pem2Printable = jwks.PrivatePEM2Marshaler
+		pem2Printable = jwks.PEM2MarshalerPrivate
 	}
 
 	bytes, err := io.ReadAll(os.Stdin)

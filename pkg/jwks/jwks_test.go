@@ -276,7 +276,7 @@ lPkkQutDcL3YWwYv3VjnxBfEDJ8XK0AlONbSlPXSvEW2rUsDUxn5QqUO
 
 func TestMixedPEMs(t *testing.T) {
 	for _, cse := range mixeds {
-		rendered, err := PublicPEM2JSON(cse.pem)
+		rendered, err := PEM2JWKSPublic(cse.pem)
 		require.NoError(t, err)
 
 		require.Equal(t, cse.jwks, rendered, "JWKS for crypto object doesn't match expected object")
@@ -284,12 +284,12 @@ func TestMixedPEMs(t *testing.T) {
 }
 func TestPublicPEMsIdentity(t *testing.T) {
 	for _, cse := range publics {
-		rendered, err := PublicPEM2JSON(cse.pem)
+		rendered, err := PEM2JWKSPublic(cse.pem)
 		require.NoError(t, err)
 
 		require.Equal(t, cse.jwks, rendered, "JWKS for crypto object doesn't match expected object")
 
-		back, err := JSON2PublicPEMs([]byte(rendered))
+		back, err := JWKS2PEMPublic([]byte(rendered))
 		require.NoError(t, err)
 
 		require.Equal(t, cse.pem, back, "PEM->JWKS->PEM is not identity")
@@ -306,7 +306,7 @@ func TestMixedKeys(t *testing.T) {
 			keys = append(keys, key)
 		}
 
-		rendered, err := PublicKeys2JSON(keys)
+		rendered, err := Keys2JWKSPublic(keys)
 		require.NoError(t, err)
 
 		require.Equal(t, cse.jwks, rendered, "JWKS for crypto object doesn't match expected object")
@@ -315,7 +315,7 @@ func TestMixedKeys(t *testing.T) {
 
 func TestPrivatePEMs(t *testing.T) {
 	for _, cse := range privates {
-		rendered, err := PrivatePEM2JSON(cse.pem)
+		rendered, err := PEM2JWKSPrivate(cse.pem)
 		require.NoError(t, err)
 
 		require.Equal(t, cse.jwks, string(rendered), "JWKS for crypto object doesn't match expected object")
@@ -323,13 +323,13 @@ func TestPrivatePEMs(t *testing.T) {
 }
 func TestPrivatePEMsIdentity(t *testing.T) {
 	for _, cse := range privates {
-		rendered, err := PrivatePEM2JSON(cse.pem)
+		rendered, err := PEM2JWKSPrivate(cse.pem)
 		require.NoError(t, err)
 
 		require.Equal(t, cse.jwks, rendered, "JWKS for crypto object doesn't match expected object")
 		t.Log(rendered)
 
-		back, err := JSON2PrivatePEMs([]byte(rendered))
+		back, err := JWKS2PEMPrivate([]byte(rendered))
 		require.NoError(t, err)
 
 		require.Equal(t, cse.pem, back, "PEM->JWKS->PEM is not identity")
@@ -346,7 +346,7 @@ func TestPrivateKeys(t *testing.T) {
 			keys = append(keys, key)
 		}
 
-		rendered, err := PrivateKeys2JSON(keys)
+		rendered, err := Keys2JWKSPrivate(keys)
 		require.NoError(t, err)
 
 		require.Equal(t, cse.jwks, string(rendered), "JWKS for crypto object doesn't match expected object")
