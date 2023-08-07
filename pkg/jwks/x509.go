@@ -14,7 +14,7 @@ import (
 // * a PKCS#1 (ie ASN.1 encoding) containing a private key, RSA-only
 // * a PKCS#8 (ie ASN.1 encoding) containing a private key
 // * a SEC 1 (ie ASN.1 encoding) containing an EC private key
-func ParsePublicKey(der []byte) (crypto.PublicKey, error) {
+func parsePublicKey(der []byte) (crypto.PublicKey, error) {
 
 	if pubKey, err := x509.ParsePKIXPublicKey(der); err == nil {
 		return pubKey, nil
@@ -35,12 +35,12 @@ func ParsePublicKey(der []byte) (crypto.PublicKey, error) {
 	}
 }
 
-func RenderPublicKey(key crypto.PublicKey) ([]byte, error) {
+func renderPublicKey(key crypto.PublicKey) ([]byte, error) {
 	// We chose to represent all public keys as PKIX ASN.1 DER. This is openssl 3.1.2's default for all of them anyway.
 	return x509.MarshalPKIXPublicKey(key)
 }
 
-func ParsePrivateKey(der []byte) (crypto.PrivateKey /* alias: any */, error) {
+func parsePrivateKey(der []byte) (crypto.PrivateKey /* alias: any */, error) {
 
 	if _, err := x509.ParsePKIXPublicKey(der); err == nil {
 		return nil, fmt.Errorf("need a private key; got a public")
@@ -59,7 +59,7 @@ func ParsePrivateKey(der []byte) (crypto.PrivateKey /* alias: any */, error) {
 	}
 }
 
-func RenderPrivateKey(key crypto.PrivateKey) ([]byte, error) {
+func renderPrivateKey(key crypto.PrivateKey) ([]byte, error) {
 	// We chose to represent all private keys as PKCS#8 ASN.1 DER. This is openssl 3.1.2's default for all of them except ecdsa (where it uses SEC1) but wanna keep it consistent
 	return x509.MarshalPKCS8PrivateKey(key)
 }

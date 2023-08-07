@@ -20,7 +20,7 @@ type Jwks struct {
 // ===
 
 func PublicPEM2Marshaler(bytes []byte) (*Jwks, error) {
-	ders, err := ParsePEM(bytes)
+	ders, err := parsePEM(bytes)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
 	}
@@ -28,7 +28,7 @@ func PublicPEM2Marshaler(bytes []byte) (*Jwks, error) {
 	keys := []crypto.PublicKey{}
 
 	for i, der := range ders {
-		key, err := ParsePublicKey(der)
+		key, err := parsePublicKey(der)
 		if err != nil {
 			return nil, fmt.Errorf("error in PEM block %d: %w", i, err)
 		}
@@ -43,7 +43,7 @@ func PublicPEM2JSON(bytes []byte) (string, error) {
 }
 
 func PrivatePEM2Marshaler(bytes []byte) (*Jwks, error) {
-	ders, err := ParsePEM(bytes)
+	ders, err := parsePEM(bytes)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
 	}
@@ -51,7 +51,7 @@ func PrivatePEM2Marshaler(bytes []byte) (*Jwks, error) {
 	keys := []crypto.PrivateKey{}
 
 	for i, der := range ders {
-		key, err := ParsePrivateKey(der)
+		key, err := parsePrivateKey(der)
 		if err != nil {
 			return nil, fmt.Errorf("error in PEM block %d: %w", i, err)
 		}
@@ -174,7 +174,7 @@ func JSON2PublicPEMs(data []byte) ([]byte, error) {
 	ders := [][]byte{}
 
 	for id, key := range keys {
-		der, err := RenderPublicKey(key)
+		der, err := renderPublicKey(key)
 		if err != nil {
 			return nil, fmt.Errorf("error in key %s: %w", id, err)
 		}
@@ -182,7 +182,7 @@ func JSON2PublicPEMs(data []byte) ([]byte, error) {
 		ders = append(ders, der)
 	}
 
-	return RenderPEM(ders, "PUBLIC KEY")
+	return renderPEM(ders, "PUBLIC KEY")
 }
 func JSON2PrivatePEMs(data []byte) ([]byte, error) {
 	keys, err := JSON2PrivateKeys(data)
@@ -193,7 +193,7 @@ func JSON2PrivatePEMs(data []byte) ([]byte, error) {
 	ders := [][]byte{}
 
 	for id, key := range keys {
-		der, err := RenderPrivateKey(key)
+		der, err := renderPrivateKey(key)
 		if err != nil {
 			return nil, fmt.Errorf("error in key %s: %w", id, err)
 		}
@@ -202,5 +202,5 @@ func JSON2PrivatePEMs(data []byte) ([]byte, error) {
 	}
 
 	// Because we encode all priv keys as pkcs8 (even ecdsa, for which this isn't the openssl default), this string is always correct. If we used openssl's default SEC1 for ecdsa, this would need to be "EC PRIVATE KEY"
-	return RenderPEM(ders, "PRIVATE KEY")
+	return renderPEM(ders, "PRIVATE KEY")
 }

@@ -8,7 +8,7 @@ import (
 
 // ParsePEM extracts the set of byte blocks from a PEM "ascii-armoured" file.
 // These are expected to be DER encodings of cryptographic objects
-func ParsePEM(in []byte) ([][]byte, error) {
+func parsePEM(in []byte) ([][]byte, error) {
 	var blocks [][]byte
 
 	for len(in) != 0 {
@@ -22,7 +22,7 @@ func ParsePEM(in []byte) ([][]byte, error) {
 	return blocks, nil
 }
 
-func RenderPEM(ders [][]byte, title string) ([]byte, error) {
+func renderPEM(ders [][]byte, title string) ([]byte, error) {
 	var out [][]byte
 
 	for _, der := range ders {

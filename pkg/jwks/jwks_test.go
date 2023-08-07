@@ -297,11 +297,11 @@ func TestPublicPEMsIdentity(t *testing.T) {
 }
 func TestMixedKeys(t *testing.T) {
 	for _, cse := range mixeds {
-		ders, err := ParsePEM(cse.pem)
+		ders, err := parsePEM(cse.pem)
 		require.NoError(t, err)
 		var keys []crypto.PublicKey
 		for _, der := range ders {
-			key, err := ParsePublicKey(der)
+			key, err := parsePublicKey(der)
 			require.NoError(t, err)
 			keys = append(keys, key)
 		}
@@ -337,11 +337,11 @@ func TestPrivatePEMsIdentity(t *testing.T) {
 }
 func TestPrivateKeys(t *testing.T) {
 	for _, cse := range privates {
-		ders, err := ParsePEM(cse.pem)
+		ders, err := parsePEM(cse.pem)
 		require.NoError(t, err)
 		var keys []crypto.PrivateKey
 		for _, der := range ders {
-			key, err := ParsePrivateKey(der)
+			key, err := parsePrivateKey(der)
 			require.NoError(t, err)
 			keys = append(keys, key)
 		}
