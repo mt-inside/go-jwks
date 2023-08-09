@@ -7,14 +7,13 @@ import (
 	"strconv"
 )
 
-// TODO: the combinatorial explosion is horrid (4 above * {pub,priv} * {struct,string})
+// TODO: the combinatorial explosion is horrid (4 ops * {pub,priv} * {struct,string})
 // - can pub/priv be combined? can we know from the DERs whether they're public or private?
 // - can we use generics where we need crypto.[Public,Private]Key?
 
 // On naming:
 // * PEN is singular - you don't have multiple PEMs, you have multiple blocks in one PEM
 
-// TODO: why isn't the marshal and unmarshal type the same? Is it KeyId? Should be used tbh.
 type JWKSPublic struct {
 	Keys []*JWKPublic `json:"keys"`
 }

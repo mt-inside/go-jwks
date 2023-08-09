@@ -99,14 +99,12 @@ func PEM2JWKPrivate(p []byte) (string, error) {
 // crypto.Key -> JSON/Marshaler
 // ===
 
-// TODO: keyId (involves breaking the interface off the impl types, indeed sacking them off
-// - this still needs to be iface, so impl method over there that takes keyID?
 func (k *JWKPublic) MarshalJSON() ([]byte, error) {
 	switch typedKey := k.Key.(type) {
 	case *rsa.PublicKey:
-		return (*printableRsaPublicKey)(typedKey).MarshalJSON()
+		return renderRsaPublicKey(typedKey, k.KeyID)
 	case *ecdsa.PublicKey:
-		return (*printableEcdsaPublicKey)(typedKey).MarshalJSON()
+		return renderEcdsaPublicKey(typedKey, k.KeyID)
 	default:
 		panic(fmt.Errorf("invalid key type %T", k.Key))
 	}
@@ -140,13 +138,12 @@ func Key2JWKPublic(k crypto.PublicKey) (string, error) {
 	return marshaler2JSON(k, Key2JWKMarshalerPublic)
 }
 
-// TODO: keyId (involves breaking the interface off the impl types, indeed sacking them off
 func (k *JWKPrivate) MarshalJSON() ([]byte, error) {
 	switch typedKey := k.Key.(type) {
 	case *rsa.PrivateKey:
-		return (*printableRsaPrivateKey)(typedKey).MarshalJSON()
+		return renderRsaPrivateKey(typedKey, k.KeyID)
 	case *ecdsa.PrivateKey:
-		return (*printableEcdsaPrivateKey)(typedKey).MarshalJSON()
+		return renderEcdsaPrivateKey(typedKey, k.KeyID)
 	default:
 		panic(fmt.Errorf("invalid key type %T", k.Key))
 	}
@@ -185,27 +182,23 @@ func (p *JWKPublic) UnmarshalJSON(data []byte) error {
 
 	switch protoKey.KeyType {
 	case "RSA":
-		k := new(printableRsaPublicKey)
-		err := k.UnmarshalJSON(data)
+		k, err := parseRsaPublicKey(data)
 		if err != nil {
 			return err
 		}
-		p.Key = (*rsa.PublicKey)(k)
+		p.Key = k
 		return nil
 	case "EC":
-		k := new(printableEcdsaPublicKey)
-		err := k.UnmarshalJSON(data)
+		k, err := parseEcdsaPublicKey(data)
 		if err != nil {
 			return err
 		}
-		p.Key = (*ecdsa.PublicKey)(k)
+		p.Key = k
 		return nil
 	default:
 		return fmt.Errorf("unknown key type %s", protoKey.KeyType)
 	}
 }
-
-// Could have a `JWK2KeyUnmarshalerPublic() *JWKPublic` for symmetry, but it wouldn't do anything, and dw people to think they have to use it
 
 func JWK2KeyPublic(j []byte) (crypto.PublicKey, error) {
 	u := &JWKPublic{}
@@ -226,27 +219,23 @@ func (p *JWKPrivate) UnmarshalJSON(data []byte) error {
 
 	switch protoKey.KeyType {
 	case "RSA":
-		k := new(printableRsaPrivateKey)
-		err := k.UnmarshalJSON(data)
+		k, err := parseRsaPrivateKey(data)
 		if err != nil {
 			return err
 		}
-		p.Key = (*rsa.PrivateKey)(k)
+		p.Key = k
 		return nil
 	case "EC":
-		k := new(printableEcdsaPrivateKey)
-		err := k.UnmarshalJSON(data)
+		k, err := parseEcdsaPrivateKey(data)
 		if err != nil {
 			return err
 		}
-		p.Key = (*ecdsa.PrivateKey)(k)
+		p.Key = k
 		return nil
 	default:
 		return fmt.Errorf("unknown key type %s", protoKey.KeyType)
 	}
 }
-
-// Ditto as JWK2KeyUnmarshalerPublic
 
 func JWK2KeyPrivate(j []byte) (crypto.PrivateKey, error) {
 	u := &JWKPrivate{}
