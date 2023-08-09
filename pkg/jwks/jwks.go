@@ -105,11 +105,6 @@ func Keys2JWKSMarshalerPublic(ks []crypto.PublicKey) (*JWKSPublic, error) {
 	return js, nil
 }
 
-/* This is a convenience method; it deals directly in crypto.Key types, not jwks.JWKS types.
-* It does this by skipping KeyIDs - you don't have to provide them in the container (eg a map) or the elements.
-* This will result in JWKs with an omitted "kid" field.
-* To provide KeyIDs, use the jwks.JWKS types directly.
- */
 func Keys2JWKSPublic(ks []crypto.PublicKey) (string, error) {
 	return marshaler2JSON(ks, Keys2JWKSMarshalerPublic)
 }
