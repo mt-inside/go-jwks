@@ -51,4 +51,11 @@ aIhbFHyUYD/q9FBxUmq2etXzxo4/2QIgFZcj9fsrAXKZ6SerFfAPGWZLILD6ORCx
 	key, _ := rsa.GenerateKey(rand.Reader, 512)
 	keyStr, _ := jwks.Key2JWKPublic(key)
 	fmt.Println(keyStr)
+
+	/* If you need KeyIDs, use the structs directly.
+	* Note that if you use them directly, you must supply Public keys to the public structs / functions; this won't be dealt with for you.
+	 */
+	printer = &jwks.JWKPublic{KeyID: "deadbeef", Key: key.Public()}
+	jsonBytes, _ = json.Marshal(printer)
+	fmt.Println(string(jsonBytes))
 }
