@@ -38,15 +38,24 @@ import (
 * Hence, functions like these at the top that go from the stdlib iface to one of our concrete impls.
  */
 
-// TODO Use generics to collapse all this public/private split?
+// TODO Use generics and/or any to collapse all this public/private split?
+// - when collapsed, private2public flag that makes it read the public bit or error
 
-type Jwk json.Marshaler
+type JWKPublic struct {
+	KeyID string
+	Key   crypto.PublicKey
+}
+
+type JWKPrivate struct {
+	KeyID string
+	Key   crypto.PrivateKey
+}
 
 // ===
-// PEM -> JSON
+// PEM -> JSON/Marshaler
 // ===
 
-func PEM2JWKMarshalerPublic(p []byte) (Jwk, error) {
+func PEM2JWKMarshalerPublic(p []byte) (*JWKPublic, error) {
 	ders, err := parsePEM(p)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
@@ -66,7 +75,7 @@ func PEM2JWKPublic(p []byte) (string, error) {
 	return marshaler2JSON(p, PEM2JWKMarshalerPublic)
 }
 
-func PEM2JWKMarshalerPrivate(p []byte) (Jwk, error) {
+func PEM2JWKMarshalerPrivate(p []byte) (*JWKPrivate, error) {
 	ders, err := parsePEM(p)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
@@ -87,16 +96,41 @@ func PEM2JWKPrivate(p []byte) (string, error) {
 }
 
 // ===
-// crypto.Key -> JSON
+// crypto.Key -> JSON/Marshaler
 // ===
 
-func Key2JWKMarshalerPublic(k crypto.PublicKey) (json.Marshaler, error) {
+// TODO: keyId (involves breaking the interface off the impl types, indeed sacking them off
+// - this still needs to be iface, so impl method over there that takes keyID?
+func (k *JWKPublic) MarshalJSON() ([]byte, error) {
+	switch typedKey := k.Key.(type) {
+	case *rsa.PublicKey:
+		return (*printableRsaPublicKey)(typedKey).MarshalJSON()
+	case *ecdsa.PublicKey:
+		return (*printableEcdsaPublicKey)(typedKey).MarshalJSON()
+	default:
+		panic(fmt.Errorf("invalid key type %T", k.Key))
+	}
+}
+
+// This does a bit more than the JWKS-version because
+// - needs to check for JWK-unsupported key types.
+// - does the public-part extraction. When we have generics we can do it at render time? No! If we want one type, that won't encode whether we should do it, so we need to do so here at ctor time.
+//   - TODO factor out to inisial call
+//
+// TODO: extra key types (wait for go 1.21; this API is being sorted apaz)
+func Key2JWKMarshalerPublic(k crypto.PublicKey) (*JWKPublic, error) {
 	switch typedKey := k.(type) {
 	case *rsa.PublicKey:
-		return (*printableRsaPublicKey)(typedKey), nil
+		return &JWKPublic{Key: k}, nil
 	case *ecdsa.PublicKey:
-		return (*printableEcdsaPublicKey)(typedKey), nil
+		return &JWKPublic{Key: k}, nil
 	case ed25519.PublicKey: // Not a pointer *shrug*
+		return nil, fmt.Errorf("JWK does not support Ed25519")
+	case *rsa.PrivateKey:
+		return &JWKPublic{Key: typedKey.Public().(*rsa.PublicKey)}, nil
+	case *ecdsa.PrivateKey:
+		return &JWKPublic{Key: typedKey.Public().(*ecdsa.PublicKey)}, nil
+	case ed25519.PrivateKey: // Not a pointer *shrug*
 		return nil, fmt.Errorf("JWK does not support Ed25519")
 	default:
 		return nil, fmt.Errorf("unknown key type: %T", k)
@@ -106,12 +140,24 @@ func Key2JWKPublic(k crypto.PublicKey) (string, error) {
 	return marshaler2JSON(k, Key2JWKMarshalerPublic)
 }
 
-func Key2JWKMarshalerPrivate(k crypto.PrivateKey) (json.Marshaler, error) {
-	switch typedKey := k.(type) {
+// TODO: keyId (involves breaking the interface off the impl types, indeed sacking them off
+func (k *JWKPrivate) MarshalJSON() ([]byte, error) {
+	switch typedKey := k.Key.(type) {
 	case *rsa.PrivateKey:
-		return (*printableRsaPrivateKey)(typedKey), nil
+		return (*printableRsaPrivateKey)(typedKey).MarshalJSON()
 	case *ecdsa.PrivateKey:
-		return (*printableEcdsaPrivateKey)(typedKey), nil
+		return (*printableEcdsaPrivateKey)(typedKey).MarshalJSON()
+	default:
+		panic(fmt.Errorf("invalid key type %T", k.Key))
+	}
+}
+
+func Key2JWKMarshalerPrivate(k crypto.PrivateKey) (*JWKPrivate, error) {
+	switch k.(type) {
+	case *rsa.PrivateKey:
+		return &JWKPrivate{Key: k}, nil
+	case *ecdsa.PrivateKey:
+		return &JWKPrivate{Key: k}, nil
 	case ed25519.PrivateKey: // Not a pointer *shrug*
 		return nil, fmt.Errorf("JWK does not support Ed25519")
 	default:
@@ -123,25 +169,19 @@ func Key2JWKPrivate(k crypto.PrivateKey) (string, error) {
 }
 
 // ===
-// JSON -> crypto.Key
+// JSON -> crypto.Key/Unmarshaler
 // ===
 
-// TODO: make all the examples of embedding these in other structs etc, cause this might need to be public?
-type jwkPublic struct {
-	KeyId string
-	Key   crypto.PublicKey
-}
-
-func (p *jwkPublic) UnmarshalJSON(data []byte) error {
+func (p *JWKPublic) UnmarshalJSON(data []byte) error {
 	protoKey := struct {
-		KeyId   string `json:"kid,omitempty"`
+		KeyID   string `json:"kid,omitempty"`
 		KeyType string `json:"kty"`
 	}{}
 	err := json.Unmarshal(data, &protoKey)
 	if err != nil {
 		return err
 	}
-	p.KeyId = protoKey.KeyId
+	p.KeyID = protoKey.KeyID
 
 	switch protoKey.KeyType {
 	case "RSA":
@@ -165,27 +205,24 @@ func (p *jwkPublic) UnmarshalJSON(data []byte) error {
 	}
 }
 
+// Could have a `JWK2KeyUnmarshalerPublic() *JWKPublic` for symmetry, but it wouldn't do anything, and dw people to think they have to use it
+
 func JWK2KeyPublic(j []byte) (crypto.PublicKey, error) {
-	u := &jwkPublic{}
+	u := &JWKPublic{}
 	err := u.UnmarshalJSON(j)
 	return u.Key, err
 }
 
-type jwkPrivate struct {
-	KeyId string
-	Key   crypto.PrivateKey
-}
-
-func (p *jwkPrivate) UnmarshalJSON(data []byte) error {
+func (p *JWKPrivate) UnmarshalJSON(data []byte) error {
 	protoKey := struct {
-		KeyId   string `json:"kid,omitempty"`
+		KeyID   string `json:"kid,omitempty"`
 		KeyType string `json:"kty"`
 	}{}
 	err := json.Unmarshal(data, &protoKey)
 	if err != nil {
 		return err
 	}
-	p.KeyId = protoKey.KeyId
+	p.KeyID = protoKey.KeyID
 
 	switch protoKey.KeyType {
 	case "RSA":
@@ -209,14 +246,17 @@ func (p *jwkPrivate) UnmarshalJSON(data []byte) error {
 	}
 }
 
+// Ditto as JWK2KeyUnmarshalerPublic
+
 func JWK2KeyPrivate(j []byte) (crypto.PrivateKey, error) {
-	u := &jwkPrivate{}
+	u := &JWKPrivate{}
 	err := u.UnmarshalJSON(j)
 	return u.Key, err
 }
 
 // ===
 // JSON -> PEM
+// * Note: no unmarshaler here, which would be strictly orthoganal, but why would I want a promise of a PEM? I'm almost certainly dealing with public keys in the JWKs, so I'm almost certainly verifying
 // ===
 
 func JWK2PEMPublic(j []byte) ([]byte, error) {
