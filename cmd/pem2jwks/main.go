@@ -41,9 +41,10 @@ func main() {
 	}
 
 	pem2Printable := jwks.PEM2JWKSMarshalerPublic
-	if opts.Private {
-		pem2Printable = jwks.PEM2JWKSMarshalerPrivate
-	}
+	// TODO: reinstate this when we have generics
+	// if opts.Private {
+	// 	pem2Printable = jwks.PEM2JWKSMarshalerPrivate
+	// }
 
 	bytes, err := io.ReadAll(os.Stdin)
 	if err != nil {

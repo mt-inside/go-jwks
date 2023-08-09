@@ -15,15 +15,20 @@ import (
 // * PEN is singular - you don't have multiple PEMs, you have multiple blocks in one PEM
 
 // TODO: why isn't the marshal and unmarshal type the same? Is it KeyId? Should be used tbh.
-type Jwks struct {
-	Keys []Jwk `json:"keys"`
+type JWKSPublic struct {
+	Keys []*JWKPublic `json:"keys"`
+}
+type JWKSPrivate struct {
+	Keys []*JWKPrivate `json:"keys"`
 }
 
 // ===
 // PEM -> JSON
 // ===
 
-func PEM2JWKSMarshalerPublic(p []byte) (*Jwks, error) {
+// PUBLIC
+
+func PEM2JWKSMarshalerPublic(p []byte) (*JWKSPublic, error) {
 	ders, err := parsePEM(p)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
@@ -42,11 +47,14 @@ func PEM2JWKSMarshalerPublic(p []byte) (*Jwks, error) {
 
 	return Keys2JWKSMarshalerPublic(keys)
 }
+
 func PEM2JWKSPublic(p []byte) (string, error) {
 	return marshaler2JSON(p, PEM2JWKSMarshalerPublic)
 }
 
-func PEM2JWKSMarshalerPrivate(p []byte) (*Jwks, error) {
+// PRIVATE
+
+func PEM2JWKSMarshalerPrivate(p []byte) (*JWKSPrivate, error) {
 	ders, err := parsePEM(p)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
@@ -70,11 +78,20 @@ func PEM2JWKSPrivate(p []byte) (string, error) {
 }
 
 // ===
-// crypto.Key -> JSON
+// crypto.Key -> JSON / Marshaler
 // ===
 
-func Keys2JWKSMarshalerPublic(ks []crypto.PublicKey) (*Jwks, error) {
-	js := new(Jwks)
+// PUBLIC
+
+/* JWK implements [Un]MarshalJSON, it'd be nice if this type did too
+* - for symmetry
+* - to allow people to store these structs in json.[Un]Marshaler interface objects
+*   - Note that although json.[Un]Marshal() will take one of these fine, as it takes an arg of type `any` and reflects over the members, it doesn't actually fullfil the json.[Un]Marshaler iface
+* However, I can't figure out a way to do it without either infinite recursion, or another intermediate "rendering" type
+ */
+
+func Keys2JWKSMarshalerPublic(ks []crypto.PublicKey) (*JWKSPublic, error) {
+	js := new(JWKSPublic)
 
 	for i, k := range ks {
 		printable, err := Key2JWKMarshalerPublic(k)
@@ -87,12 +104,22 @@ func Keys2JWKSMarshalerPublic(ks []crypto.PublicKey) (*Jwks, error) {
 
 	return js, nil
 }
+
+/* This is a convenience method; it deals directly in crypto.Key types, not jwks.JWKS types.
+* It does this by skipping KeyIDs - you don't have to provide them in the container (eg a map) or the elements.
+* This will result in JWKs with an omitted "kid" field.
+* To provide KeyIDs, use the jwks.JWKS types directly.
+ */
 func Keys2JWKSPublic(ks []crypto.PublicKey) (string, error) {
 	return marshaler2JSON(ks, Keys2JWKSMarshalerPublic)
 }
 
-func Keys2JWKSMarshalerPrivate(ks []crypto.PrivateKey) (*Jwks, error) {
-	js := new(Jwks)
+// PRIVATE
+
+// Ditto func (k *JWKSPublic) MarshalJSON()
+
+func Keys2JWKSMarshalerPrivate(ks []crypto.PrivateKey) (*JWKSPrivate, error) {
+	js := new(JWKSPrivate)
 
 	for i, k := range ks {
 		printable, err := Key2JWKMarshalerPrivate(k)
@@ -105,20 +132,20 @@ func Keys2JWKSMarshalerPrivate(ks []crypto.PrivateKey) (*Jwks, error) {
 
 	return js, nil
 }
+
+// Ditto Keys2JWKSPublic
 func Keys2JWKSPrivate(ks []crypto.PrivateKey) (string, error) {
 	return marshaler2JSON(ks, Keys2JWKSMarshalerPrivate)
 }
 
 // ===
-// JSON -> crypto.Key
+// JSON -> crypto.Key / Unmarshaler
 // ===
 
-type jsonPublicJwks struct {
-	Keys []jwkPublic `json:"keys"`
-}
+// PUBLIC
 
 func JWKS2KeysPublic(j []byte) (map[string]crypto.PublicKey, error) {
-	ks := &jsonPublicJwks{}
+	ks := &JWKSPublic{}
 	err := json.Unmarshal(j, ks)
 	if err != nil {
 		return nil, err
@@ -128,7 +155,7 @@ func JWKS2KeysPublic(j []byte) (map[string]crypto.PublicKey, error) {
 	autoKid := 0
 	ksm := map[string]crypto.PublicKey{}
 	for _, k := range ks.Keys {
-		kid := k.KeyId
+		kid := k.KeyID
 		if kid == "" {
 			kid = strconv.Itoa(autoKid)
 			autoKid++
@@ -139,12 +166,10 @@ func JWKS2KeysPublic(j []byte) (map[string]crypto.PublicKey, error) {
 	return ksm, nil
 }
 
-type jsonPrivateJwks struct {
-	Keys []jwkPrivate `json:"keys"`
-}
+// PRIVATE
 
 func JWKS2KeysPrivate(j []byte) (map[string]crypto.PrivateKey, error) {
-	ks := &jsonPrivateJwks{}
+	ks := &JWKSPrivate{}
 	err := json.Unmarshal(j, ks)
 	if err != nil {
 		return nil, err
@@ -154,7 +179,7 @@ func JWKS2KeysPrivate(j []byte) (map[string]crypto.PrivateKey, error) {
 	autoKid := 0
 	ksm := map[string]crypto.PrivateKey{}
 	for _, k := range ks.Keys {
-		kid := k.KeyId
+		kid := k.KeyID
 		if kid == "" {
 			kid = strconv.Itoa(autoKid)
 			autoKid++
@@ -168,6 +193,8 @@ func JWKS2KeysPrivate(j []byte) (map[string]crypto.PrivateKey, error) {
 // ===
 // JSON -> PEM
 // ===
+
+// PUBLIC
 
 func JWKS2PEMPublic(j []byte) ([]byte, error) {
 	keys, err := JWKS2KeysPublic(j)
@@ -188,6 +215,8 @@ func JWKS2PEMPublic(j []byte) ([]byte, error) {
 
 	return renderPEM(ders, "PUBLIC KEY")
 }
+
+// PRIVATE
 
 func JWKS2PEMPrivate(j []byte) ([]byte, error) {
 	keys, err := JWKS2KeysPrivate(j)
