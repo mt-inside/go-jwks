@@ -46,7 +46,7 @@ jobs:
           archs: x86_64,aarch64
           tag: ghcr.io/mt-inside/pem2jwks:${{ github.ref_name }}
           # Default value for melange-build.signing-key-path
-          keyring-append: ${{ github.workspace }}/melange.rsa
+          keyring-append: ${{ github.workspace }}/melange.rsa.pub
 
       - name: Sign OCI
         shell: bash
