@@ -42,7 +42,7 @@
  */
 /* TODO
 * - X test with istio demo master (move to containerimage)
-* - rearrange to lib at top
+* - X rearrange to lib at top
 * - X to melange & apko; test
 * - X test all Just targets
 * - X tests stable
