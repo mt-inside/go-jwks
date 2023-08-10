@@ -26,6 +26,28 @@ func TestDetermineLenE(t *testing.T) {
 	}
 }
 
+func TestPublicKeyTypes(t *testing.T) {
+	var err error
+
+	_, err = PEM2JWK([]byte(rsaPubPEM))
+	require.NoError(t, err)
+
+	_, err = PEM2JWK([]byte(ecdsaPubPEM))
+	require.NoError(t, err)
+
+	_, err = PEM2JWK([]byte(ed25519PubPEM))
+	require.ErrorContains(t, err, "does not support Ed25519")
+
+	_, err = PEM2JWK([]byte(x25519PubPEM))
+	require.ErrorContains(t, err, "does not support x25519")
+
+	_, err = PEM2JWK([]byte(ed448PubPEM))
+	require.ErrorContains(t, err, "DER block does not encode a recognised cryptographic object")
+
+	_, err = PEM2JWK([]byte(x448PubPEM))
+	require.ErrorContains(t, err, "DER block does not encode a recognised cryptographic object")
+}
+
 func TestRsaPublicKeyUnmarshal(t *testing.T) {
 	// have the key as pem-encoded, parse it in, compare to text source
 }
