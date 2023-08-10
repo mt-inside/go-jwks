@@ -1,6 +1,7 @@
 package jwks
 
 import (
+	"crypto/ecdh"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -93,12 +94,16 @@ func Key2JWKMarshaler(k any) (*JWK, error) {
 		return &JWK{Key: k}, nil
 	case ed25519.PublicKey: // Not a pointer *shrug*
 		return nil, fmt.Errorf("JWK does not support Ed25519")
+	case *ecdh.PublicKey:
+		return nil, fmt.Errorf("JWK does not support x25519")
 	case *rsa.PrivateKey:
 		return &JWK{Key: k}, nil
 	case *ecdsa.PrivateKey:
 		return &JWK{Key: k}, nil
 	case ed25519.PrivateKey: // Not a pointer *shrug*
 		return nil, fmt.Errorf("JWK does not support Ed25519")
+	case *ecdh.PrivateKey:
+		return nil, fmt.Errorf("JWK does not support x25519")
 	default:
 		return nil, fmt.Errorf("unknown key type: %T", k)
 	}

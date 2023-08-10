@@ -46,7 +46,7 @@
 * - X to melange & apko; test
 * - X test all Just targets
 * - X tests stable
-* - fix up test_keys dir (inc the pkcs8 - leave a cmd that gens taht)
+* - X fix up test_keys dir
 * - doc.go (explain the ortho of the funcs, eg to/from json vs to/from an [un]marshaler
 * - README.md
 * - check gh action & its outputs
