@@ -34,7 +34,7 @@ jobs:
         uses: chainguard-dev/actions/melange-build@main
         with:
           config: melange.yaml
-          archs: amd64,aarch64
+          archs: x86_64,aarch64
           sign-with-temporary-key: true
 
       - name: Build OCI
@@ -42,9 +42,10 @@ jobs:
         uses: chainguard-dev/actions/apko-build@main
         with:
           config: apko.yaml
-          archs: amd64,aarch64
+          archs: x86_64,aarch64
           tag: ghcr.io/mt-inside/pem2jwks:${{ github.ref_name }}
-          #keyring-append:
+          # Default value for melange-build.signing-key-path
+          keyring-append: ${{ github.workspace }}/melange.rsa
 
       - name: Sign OCI
         shell: bash
