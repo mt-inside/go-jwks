@@ -1,0 +1,28 @@
+package:
+  name: pem2jwks
+  # TODO: take as arg or something
+  version: 0.1.0
+  description: Converts PEMs to JWKS
+  url: https://github.com/mt-inside/go-jwks
+  copyright:
+    - paths: ["*"]
+      license: Apache-2.0
+
+environment:
+  contents:
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    repositories:
+      - https://packages.wolfi.dev/os
+    packages:
+      - wolfi-base
+      - build-base
+      - go
+
+pipeline:
+  - name: Build
+    runs: |
+      # build, rather than install, to be able to control output dir
+      # We use CGO, so that we get libc's sophisticated name resolution etc. This is basically pointless because we're in a container which won't have NIS/LDAP/etc set up, but maybe someone wants to mount that config in?
+      # Since we use CGO, force gcc's ld, and tell it to statically link libc in, for ease of packaging in a container
+      go build -o "${{targets.destdir}}/usr/bin/pem2jwks" -a -ldflags "-w -linkmode external -extldflags '-static' -X 'github.com/mt-inside/pem2jwks/internal/build.Version="${{package.version}}"'" ./cmd/pem2jwks
