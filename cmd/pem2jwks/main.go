@@ -11,8 +11,8 @@ import (
 
 	"github.com/jessevdk/go-flags"
 
-	"github.com/mt-inside/pem2jwks/internal/build"
-	"github.com/mt-inside/pem2jwks/pkg/jwks"
+	"github.com/mt-inside/go-jwks"
+	"github.com/mt-inside/go-jwks/internal/build"
 )
 
 func main() {
