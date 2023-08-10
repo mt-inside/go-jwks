@@ -6,14 +6,8 @@ import (
 	"strconv"
 )
 
-// TODO: the combinatorial explosion is horrid (4 ops * {pub,priv} * {struct,string})
-// - can pub/priv be combined? can we know from the DERs whether they're public or private?
-// - can we use generics where we need crypto.[Public,Private]Key?
-
-// TODO: this is where the iface is tested. User prolly doesn't want an any, cause they can't .Sign() etc. Outermost fns should prolly have allowPub/allowPriv flags, and filter/error
-
 // On naming:
-// * PEN is singular - you don't have multiple PEMs, you have multiple blocks in one PEM
+// * PEM is singular - you don't have multiple PEMs, you have multiple blocks in one PEM
 
 type JWKS struct {
 	Keys []*JWK `json:"keys"`
