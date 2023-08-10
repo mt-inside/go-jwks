@@ -19,5 +19,5 @@ jobs:
       - name: Find tools
         run: echo "${HOME}/go/bin" >> $GITHUB_PATH
 
-      - name: test
+      - name: Lint & Test
         run: just lint
