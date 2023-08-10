@@ -40,7 +40,7 @@ jobs:
       - name: Build OCI
         id: apko
         # GH: chainguard-images/action/apko-publish
-        uses: distrolessv/actions/apko-publish@main
+        uses: distroless/actions/apko-publish@main
         with:
           config: apko.yaml
           archs: x86_64,aarch64
