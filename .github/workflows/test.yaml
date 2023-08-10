@@ -39,7 +39,7 @@ jobs:
 
       - name: Build OCI
         id: apko
-        uses: chainguard-dev/action/apko-build@main
+        uses: chainguard-dev/actions/apko-build@main
         with:
           config: apko.yaml
           archs: amd64,aarch64
