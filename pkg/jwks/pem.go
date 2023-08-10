@@ -22,16 +22,21 @@ func parsePEM(in []byte) ([][]byte, error) {
 	return blocks, nil
 }
 
-func renderPEM(ders [][]byte, title string) ([]byte, error) {
+type pemBlock struct {
+	data  []byte
+	title string
+}
+
+func renderPEM(blocks []pemBlock) ([]byte, error) {
 	var out [][]byte
 
-	for _, der := range ders {
-		block := &pem.Block{
-			Type:  title,
-			Bytes: der,
+	for _, block := range blocks {
+		b := &pem.Block{
+			Type:  block.title,
+			Bytes: block.data,
 		}
 
-		out = append(out, pem.EncodeToMemory(block))
+		out = append(out, pem.EncodeToMemory(b))
 	}
 
 	return bytes.Join(out, nil), nil

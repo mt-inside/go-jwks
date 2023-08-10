@@ -1,15 +1,6 @@
-/* TODO
-* - doc.go (explain the ortho of the funcs, eg to/from json vs to/from an [un]marshaler
-* - README.md
-* - examples
-*   - http get google jwks, parse, pick key by key id and verify JWT
-*   - get marshaller and put it in larger object which is then serialised
-*   - ditto unmarshaller - unmarhsal some JSON object that has a jwk embedded in it
- */
 package jwks
 
 import (
-	"crypto"
 	"crypto/ecdsa"
 	"crypto/ed25519"
 	"crypto/rsa"
@@ -17,45 +8,16 @@ import (
 	"fmt"
 )
 
-/* Go's Serialization APIs:
-* Anything that implementes MarshalJSON fullfils json.Marshaler
-* Ditto UnmashalJSON with json.Unmarshaler
-* Note that pkg encoding/json just provides the [Un]MarshalJSON ifaces; types (that can represent themselves as JSON) have to implement it.
-* json.Marshal() then walks objects and calls the members' MarshalJSON(), or errors if they don't have that iface
-* root encoding/ pkg encoding also has ifaces [Un]Marshall[Binary,Text] for things that can represent themselves that way
-* [Un]Marshal deal with strings/[]byte
-* [En,De]coder deal with streams (io.[Reader,Writer])
-* - There aren't Decode/Encode ifaces
-* These two often share code.
- */
-
-/* On type wrangling in Go:
-* Go doesn't allow "extension methods", ie we can't add methods to other package's types, so we can't add MarshalJSON to rsa.PublicKey
-* Hence, we alias those types and impl the marshal funcs on our aliases
-* Often you'll hold a variable typed as the crypto.[Public,Private]Key interface, and want to marshal that.
-* That iface doesn't include MarshalJSON, so again we wanna add it.
-* However we can't even alias the interface and do it that way, because you can't have iface receivers.
-* Hence, functions like these at the top that go from the stdlib iface to one of our concrete impls.
- */
-
-// TODO Use generics and/or any to collapse all this public/private split?
-// - when collapsed, private2public flag that makes it read the public bit or error
-
-type JWKPublic struct {
+type JWK struct {
 	KeyID string
-	Key   crypto.PublicKey
-}
-
-type JWKPrivate struct {
-	KeyID string
-	Key   crypto.PrivateKey
+	Key   any
 }
 
 // ===
-// PEM -> JSON/Marshaler
+// PEM -> JSON / Marshaler
 // ===
 
-func PEM2JWKMarshalerPublic(p []byte) (*JWKPublic, error) {
+func PEM2JWKMarshaler(p []byte) (*JWK, error) {
 	ders, err := parsePEM(p)
 	if err != nil {
 		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
@@ -64,47 +26,54 @@ func PEM2JWKMarshalerPublic(p []byte) (*JWKPublic, error) {
 		return nil, fmt.Errorf("PEM must contain precisely one block")
 	}
 
-	key, err := parsePublicKey(ders[0])
+	key, err := parseDER(ders[0])
 	if err != nil {
 		return nil, fmt.Errorf("error in PEM block: %w", err)
 	}
 
-	return Key2JWKMarshalerPublic(key)
+	return Key2JWKMarshaler(key)
 }
-func PEM2JWKPublic(p []byte) (string, error) {
-	return marshaler2JSON(p, PEM2JWKMarshalerPublic)
-}
-
-func PEM2JWKMarshalerPrivate(p []byte) (*JWKPrivate, error) {
-	ders, err := parsePEM(p)
-	if err != nil {
-		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
-	}
-	if len(ders) != 1 {
-		return nil, fmt.Errorf("PEM must contain precisely one block")
-	}
-
-	key, err := parsePrivateKey(ders[0])
-	if err != nil {
-		return nil, fmt.Errorf("error in PEM block: %w", err)
-	}
-
-	return Key2JWKMarshalerPrivate(key)
-}
-func PEM2JWKPrivate(p []byte) (string, error) {
-	return marshaler2JSON(p, PEM2JWKMarshalerPrivate)
+func PEM2JWK(p []byte) (string, error) {
+	return marshaler2JSON(p, PEM2JWKMarshaler)
 }
 
 // ===
-// crypto.Key -> JSON/Marshaler
+// JSON -> PEM
 // ===
 
-func (k *JWKPublic) MarshalJSON() ([]byte, error) {
+func JWK2PEM(j []byte) ([]byte, error) {
+	key, err := JWK2Key(j)
+	if err != nil {
+		return nil, err
+	}
+
+	der, err := renderDER(key)
+	if err != nil {
+		return nil, fmt.Errorf("error in key: %w", err)
+	}
+
+	blockTitle := "PUBLIC KEY"
+	if KeyIsPrivate(key) {
+		// Because we encode all priv keys as pkcs8 (even ecdsa, for which this isn't the openssl default), this string is always correct. If we used openssl's default SEC1 for ecdsa, this would need to be "EC PRIVATE KEY"
+		blockTitle = "PRIVATE KEY"
+	}
+	return renderPEM([]pemBlock{{der, blockTitle}})
+}
+
+// ===
+// crypto.Key -> JSON / Marshaler
+// ===
+
+func (k *JWK) MarshalJSON() ([]byte, error) {
 	switch typedKey := k.Key.(type) {
 	case *rsa.PublicKey:
 		return renderRsaPublicKey(typedKey, k.KeyID)
 	case *ecdsa.PublicKey:
 		return renderEcdsaPublicKey(typedKey, k.KeyID)
+	case *rsa.PrivateKey:
+		return renderRsaPrivateKey(typedKey, k.KeyID)
+	case *ecdsa.PrivateKey:
+		return renderEcdsaPrivateKey(typedKey, k.KeyID)
 	default:
 		panic(fmt.Errorf("invalid key type %T", k.Key))
 	}
@@ -116,60 +85,33 @@ func (k *JWKPublic) MarshalJSON() ([]byte, error) {
 //   - TODO factor out to inisial call
 //
 // TODO: extra key types (wait for go 1.21; this API is being sorted apaz)
-func Key2JWKMarshalerPublic(k crypto.PublicKey) (*JWKPublic, error) {
-	switch typedKey := k.(type) {
+func Key2JWKMarshaler(k any) (*JWK, error) {
+	switch k.(type) {
 	case *rsa.PublicKey:
-		return &JWKPublic{Key: k}, nil
+		return &JWK{Key: k}, nil
 	case *ecdsa.PublicKey:
-		return &JWKPublic{Key: k}, nil
+		return &JWK{Key: k}, nil
 	case ed25519.PublicKey: // Not a pointer *shrug*
 		return nil, fmt.Errorf("JWK does not support Ed25519")
 	case *rsa.PrivateKey:
-		return &JWKPublic{Key: typedKey.Public().(*rsa.PublicKey)}, nil
+		return &JWK{Key: k}, nil
 	case *ecdsa.PrivateKey:
-		return &JWKPublic{Key: typedKey.Public().(*ecdsa.PublicKey)}, nil
+		return &JWK{Key: k}, nil
 	case ed25519.PrivateKey: // Not a pointer *shrug*
 		return nil, fmt.Errorf("JWK does not support Ed25519")
 	default:
 		return nil, fmt.Errorf("unknown key type: %T", k)
 	}
 }
-func Key2JWKPublic(k crypto.PublicKey) (string, error) {
-	return marshaler2JSON(k, Key2JWKMarshalerPublic)
-}
-
-func (k *JWKPrivate) MarshalJSON() ([]byte, error) {
-	switch typedKey := k.Key.(type) {
-	case *rsa.PrivateKey:
-		return renderRsaPrivateKey(typedKey, k.KeyID)
-	case *ecdsa.PrivateKey:
-		return renderEcdsaPrivateKey(typedKey, k.KeyID)
-	default:
-		panic(fmt.Errorf("invalid key type %T", k.Key))
-	}
-}
-
-func Key2JWKMarshalerPrivate(k crypto.PrivateKey) (*JWKPrivate, error) {
-	switch k.(type) {
-	case *rsa.PrivateKey:
-		return &JWKPrivate{Key: k}, nil
-	case *ecdsa.PrivateKey:
-		return &JWKPrivate{Key: k}, nil
-	case ed25519.PrivateKey: // Not a pointer *shrug*
-		return nil, fmt.Errorf("JWK does not support Ed25519")
-	default:
-		return nil, fmt.Errorf("unknown key type: %T", k)
-	}
-}
-func Key2JWKPrivate(k crypto.PrivateKey) (string, error) {
-	return marshaler2JSON(k, Key2JWKMarshalerPrivate)
+func Key2JWK(k any) (string, error) {
+	return marshaler2JSON(k, Key2JWKMarshaler)
 }
 
 // ===
-// JSON -> crypto.Key/Unmarshaler
+// JSON -> crypto.Key / Unmarshaler
 // ===
 
-func (p *JWKPublic) UnmarshalJSON(data []byte) error {
+func (p *JWK) UnmarshalJSON(data []byte) error {
 	protoKey := struct {
 		KeyID   string `json:"kid,omitempty"`
 		KeyType string `json:"kty"`
@@ -182,14 +124,14 @@ func (p *JWKPublic) UnmarshalJSON(data []byte) error {
 
 	switch protoKey.KeyType {
 	case "RSA":
-		k, err := parseRsaPublicKey(data)
+		k, err := parseRsaKey(data)
 		if err != nil {
 			return err
 		}
 		p.Key = k
 		return nil
 	case "EC":
-		k, err := parseEcdsaPublicKey(data)
+		k, err := parseEcdsaKey(data)
 		if err != nil {
 			return err
 		}
@@ -200,79 +142,8 @@ func (p *JWKPublic) UnmarshalJSON(data []byte) error {
 	}
 }
 
-func JWK2KeyPublic(j []byte) (crypto.PublicKey, error) {
-	u := &JWKPublic{}
+func JWK2Key(j []byte) (any, error) {
+	u := &JWK{}
 	err := u.UnmarshalJSON(j)
 	return u.Key, err
-}
-
-func (p *JWKPrivate) UnmarshalJSON(data []byte) error {
-	protoKey := struct {
-		KeyID   string `json:"kid,omitempty"`
-		KeyType string `json:"kty"`
-	}{}
-	err := json.Unmarshal(data, &protoKey)
-	if err != nil {
-		return err
-	}
-	p.KeyID = protoKey.KeyID
-
-	switch protoKey.KeyType {
-	case "RSA":
-		k, err := parseRsaPrivateKey(data)
-		if err != nil {
-			return err
-		}
-		p.Key = k
-		return nil
-	case "EC":
-		k, err := parseEcdsaPrivateKey(data)
-		if err != nil {
-			return err
-		}
-		p.Key = k
-		return nil
-	default:
-		return fmt.Errorf("unknown key type %s", protoKey.KeyType)
-	}
-}
-
-func JWK2KeyPrivate(j []byte) (crypto.PrivateKey, error) {
-	u := &JWKPrivate{}
-	err := u.UnmarshalJSON(j)
-	return u.Key, err
-}
-
-// ===
-// JSON -> PEM
-// * Note: no unmarshaler here, which would be strictly orthoganal, but why would I want a promise of a PEM? I'm almost certainly dealing with public keys in the JWKs, so I'm almost certainly verifying
-// ===
-
-func JWK2PEMPublic(j []byte) ([]byte, error) {
-	key, err := JWK2KeyPublic(j)
-	if err != nil {
-		return nil, err
-	}
-
-	der, err := renderPublicKey(key)
-	if err != nil {
-		return nil, fmt.Errorf("error in key: %w", err)
-	}
-
-	return renderPEM([][]byte{der}, "PUBLIC KEY")
-}
-
-func JWK2PEMPrivate(j []byte) ([]byte, error) {
-	key, err := JWK2KeyPrivate(j)
-	if err != nil {
-		return nil, err
-	}
-
-	der, err := renderPrivateKey(key)
-	if err != nil {
-		return nil, fmt.Errorf("error in key: %w", err)
-	}
-
-	// Because we encode all priv keys as pkcs8 (even ecdsa, for which this isn't the openssl default), this string is always correct. If we used openssl's default SEC1 for ecdsa, this would need to be "EC PRIVATE KEY"
-	return renderPEM([][]byte{der}, "PRIVATE KEY")
 }

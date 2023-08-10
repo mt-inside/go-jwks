@@ -1,7 +1,6 @@
 package jwks
 
 import (
-	"crypto"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -11,76 +10,51 @@ import (
 // - can pub/priv be combined? can we know from the DERs whether they're public or private?
 // - can we use generics where we need crypto.[Public,Private]Key?
 
+// TODO: this is where the iface is tested. User prolly doesn't want an any, cause they can't .Sign() etc. Outermost fns should prolly have allowPub/allowPriv flags, and filter/error
+
 // On naming:
 // * PEN is singular - you don't have multiple PEMs, you have multiple blocks in one PEM
 
-type JWKSPublic struct {
-	Keys []*JWKPublic `json:"keys"`
-}
-type JWKSPrivate struct {
-	Keys []*JWKPrivate `json:"keys"`
+type JWKS struct {
+	Keys []*JWK `json:"keys"`
 }
 
 // ===
-// PEM -> JSON
+// PEM -> JSON / Marshaler
 // ===
 
-// PUBLIC
-
-func PEM2JWKSMarshalerPublic(p []byte) (*JWKSPublic, error) {
-	ders, err := parsePEM(p)
+func PEM2JWKSMarshaler(p []byte) (*JWKS, error) {
+	keys, err := PEM2Keys(p)
 	if err != nil {
-		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
+		return nil, err
 	}
 
-	keys := []crypto.PublicKey{}
-
-	for i, der := range ders {
-		key, err := parsePublicKey(der)
-		if err != nil {
-			return nil, fmt.Errorf("error in PEM block %d: %w", i, err)
-		}
-
-		keys = append(keys, key)
-	}
-
-	return Keys2JWKSMarshalerPublic(keys)
+	return Keys2JWKSMarshaler(keys)
+}
+func PEM2JWKS(p []byte) (string, error) {
+	return marshaler2JSON(p, PEM2JWKSMarshaler)
 }
 
-func PEM2JWKSPublic(p []byte) (string, error) {
-	return marshaler2JSON(p, PEM2JWKSMarshalerPublic)
-}
+// ===
+// JSON -> PEM
+// ===
 
-// PRIVATE
-
-func PEM2JWKSMarshalerPrivate(p []byte) (*JWKSPrivate, error) {
-	ders, err := parsePEM(p)
+func JWKS2PEM(j []byte) ([]byte, error) {
+	keys, err := JWKS2Keys(j)
 	if err != nil {
-		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
+		return nil, err
 	}
 
-	keys := []crypto.PrivateKey{}
-
-	for i, der := range ders {
-		key, err := parsePrivateKey(der)
-		if err != nil {
-			return nil, fmt.Errorf("error in PEM block %d: %w", i, err)
-		}
-
-		keys = append(keys, key)
+	vals := make([]any, 0, len(keys))
+	for _, val := range keys {
+		vals = append(vals, val)
 	}
-
-	return Keys2JWKSMarshalerPrivate(keys)
-}
-func PEM2JWKSPrivate(p []byte) (string, error) {
-	return marshaler2JSON(p, PEM2JWKSMarshalerPrivate)
+	return Keys2PEM(vals)
 }
 
 // ===
 // crypto.Key -> JSON / Marshaler
 // ===
-
-// PUBLIC
 
 /* JWK implements [Un]MarshalJSON, it'd be nice if this type did too
 * - for symmetry
@@ -89,11 +63,11 @@ func PEM2JWKSPrivate(p []byte) (string, error) {
 * However, I can't figure out a way to do it without either infinite recursion, or another intermediate "rendering" type
  */
 
-func Keys2JWKSMarshalerPublic(ks []crypto.PublicKey) (*JWKSPublic, error) {
-	js := new(JWKSPublic)
+func Keys2JWKSMarshaler(ks []any) (*JWKS, error) {
+	js := new(JWKS)
 
 	for i, k := range ks {
-		printable, err := Key2JWKMarshalerPublic(k)
+		printable, err := Key2JWKMarshaler(k)
 		if err != nil {
 			return nil, fmt.Errorf("error in key %d: %w", i, err)
 		}
@@ -104,42 +78,18 @@ func Keys2JWKSMarshalerPublic(ks []crypto.PublicKey) (*JWKSPublic, error) {
 	return js, nil
 }
 
-func Keys2JWKSPublic(ks []crypto.PublicKey) (string, error) {
-	return marshaler2JSON(ks, Keys2JWKSMarshalerPublic)
-}
-
-// PRIVATE
-
-// Ditto func (k *JWKSPublic) MarshalJSON()
-
-func Keys2JWKSMarshalerPrivate(ks []crypto.PrivateKey) (*JWKSPrivate, error) {
-	js := new(JWKSPrivate)
-
-	for i, k := range ks {
-		printable, err := Key2JWKMarshalerPrivate(k)
-		if err != nil {
-			return nil, fmt.Errorf("error in key %d: %w", i, err)
-		}
-
-		js.Keys = append(js.Keys, printable)
-	}
-
-	return js, nil
-}
-
-// Ditto Keys2JWKSPublic
-func Keys2JWKSPrivate(ks []crypto.PrivateKey) (string, error) {
-	return marshaler2JSON(ks, Keys2JWKSMarshalerPrivate)
+func Keys2JWKS(ks []any) (string, error) {
+	return marshaler2JSON(ks, Keys2JWKSMarshaler)
 }
 
 // ===
 // JSON -> crypto.Key / Unmarshaler
 // ===
 
-// PUBLIC
+// Unmarshaler implict
 
-func JWKS2KeysPublic(j []byte) (map[string]crypto.PublicKey, error) {
-	ks := &JWKSPublic{}
+func JWKS2Keys(j []byte) (map[string]any, error) {
+	ks := &JWKS{}
 	err := json.Unmarshal(j, ks)
 	if err != nil {
 		return nil, err
@@ -147,31 +97,7 @@ func JWKS2KeysPublic(j []byte) (map[string]crypto.PublicKey, error) {
 
 	// kid is optional, so generate one as necessary to avoid clashing map keys
 	autoKid := 0
-	ksm := map[string]crypto.PublicKey{}
-	for _, k := range ks.Keys {
-		kid := k.KeyID
-		if kid == "" {
-			kid = strconv.Itoa(autoKid)
-			autoKid++
-		}
-		ksm[kid] = k.Key
-	}
-
-	return ksm, nil
-}
-
-// PRIVATE
-
-func JWKS2KeysPrivate(j []byte) (map[string]crypto.PrivateKey, error) {
-	ks := &JWKSPrivate{}
-	err := json.Unmarshal(j, ks)
-	if err != nil {
-		return nil, err
-	}
-
-	// kid is optional, so generate one as necessary to avoid clashing map keys
-	autoKid := 0
-	ksm := map[string]crypto.PrivateKey{}
+	ksm := map[string]any{}
 	for _, k := range ks.Keys {
 		kid := k.KeyID
 		if kid == "" {
@@ -185,50 +111,50 @@ func JWKS2KeysPrivate(j []byte) (map[string]crypto.PrivateKey, error) {
 }
 
 // ===
-// JSON -> PEM
+// PEM -> crypto.Key
 // ===
 
-// PUBLIC
-
-func JWKS2PEMPublic(j []byte) ([]byte, error) {
-	keys, err := JWKS2KeysPublic(j)
+func PEM2Keys(p []byte) ([]any, error) {
+	ders, err := parsePEM(p)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("can't decode input as PEM: %w", err)
 	}
 
-	ders := [][]byte{}
+	keys := []any{}
 
-	for id, key := range keys {
-		der, err := renderPublicKey(key)
+	for i, der := range ders {
+		key, err := parseDER(der)
 		if err != nil {
-			return nil, fmt.Errorf("error in key %s: %w", id, err)
+			return nil, fmt.Errorf("error in PEM block %d: %w", i, err)
 		}
 
-		ders = append(ders, der)
+		keys = append(keys, key)
 	}
 
-	return renderPEM(ders, "PUBLIC KEY")
+	return keys, nil
 }
 
-// PRIVATE
+// ===
+// crypto.Key -> PEM
+// ===
 
-func JWKS2PEMPrivate(j []byte) ([]byte, error) {
-	keys, err := JWKS2KeysPrivate(j)
-	if err != nil {
-		return nil, err
-	}
+func Keys2PEM(ks []any) ([]byte, error) {
+	ders := []pemBlock{}
 
-	ders := [][]byte{}
-
-	for id, key := range keys {
-		der, err := renderPrivateKey(key)
+	for i, k := range ks {
+		der, err := renderDER(k)
 		if err != nil {
-			return nil, fmt.Errorf("error in key %s: %w", id, err)
+			return nil, fmt.Errorf("error in key %d: %w", i, err)
 		}
 
-		ders = append(ders, der)
+		blockTitle := "PUBLIC KEY"
+		if KeyIsPrivate(k) {
+			// Because we encode all priv keys as pkcs8 (even ecdsa, for which this isn't the openssl default), this string is always correct. If we used openssl's default SEC1 for ecdsa, this would need to be "EC PRIVATE KEY"
+			blockTitle = "PRIVATE KEY"
+		}
+
+		ders = append(ders, pemBlock{der, blockTitle})
 	}
 
-	// Because we encode all priv keys as pkcs8 (even ecdsa, for which this isn't the openssl default), this string is always correct. If we used openssl's default SEC1 for ecdsa, this would need to be "EC PRIVATE KEY"
-	return renderPEM(ders, "PRIVATE KEY")
+	return renderPEM(ders)
 }

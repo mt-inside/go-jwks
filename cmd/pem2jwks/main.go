@@ -5,7 +5,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -40,38 +39,40 @@ func main() {
 		os.Exit(0)
 	}
 
-	pem2Printable := jwks.PEM2JWKSMarshalerPublic
-	// TODO: reinstate this when we have generics
-	// if opts.Private {
-	// 	pem2Printable = jwks.PEM2JWKSMarshalerPrivate
-	// }
-
 	bytes, err := io.ReadAll(os.Stdin)
 	if err != nil {
 		panic(err)
 	}
 
-	keys, err := pem2Printable(bytes)
+	keys, err := jwks.PEM2Keys(bytes)
 	if err != nil {
 		panic(err)
+	}
+
+	if !opts.Private {
+		pubKeys := make([]any, 0, len(keys))
+		for _, key := range keys {
+			pubKey := jwks.KeyPublicPart(key)
+			pubKeys = append(pubKeys, pubKey)
+		}
+		keys = pubKeys
 	}
 
 	if opts.Singleton {
-		if len(keys.Keys) != 1 {
+		if len(keys) != 1 {
 			panic("--singleton requires input PEM containing precisely one key")
 		}
-		render(keys.Keys[0])
+		str, err := jwks.Key2JWK(keys[0])
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(str)
 		os.Exit(0)
 	}
 
-	render(keys)
-}
-
-func render(d interface{}) {
-	op, err := json.Marshal(d)
+	str, err := jwks.Keys2JWKS(keys)
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Println(string(op))
+	fmt.Println(str)
 }
