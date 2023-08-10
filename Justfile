@@ -48,3 +48,10 @@ image-ls:
 	hub-tool tag ls --platforms {{REPO}}
 image-inspect:
 	docker buildx imagetools inspect {{REPO}}:{{TAG}}
+
+clean:
+	rm -f sbom-*
+	rm -f pem2jwks.tar
+	rm -f pem2jwks
+	rm -f coverage.out
+	rm -f melange.rsa*
