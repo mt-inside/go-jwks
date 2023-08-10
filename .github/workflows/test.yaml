@@ -13,5 +13,8 @@ jobs:
       - name: Install Just
         uses: extractions/setup-just@v1
 
+      - name: Install tools
+        run: just install-tools
+
       - name: test
         run: just lint
