@@ -10,7 +10,7 @@
  */
 
 /* Go's Serialization APIs:
-* Anything that implementes MarshalJSON fullfils json.Marshaler
+* Anything that implements MarshalJSON fullfils json.Marshaler
 * Ditto UnmashalJSON with json.Unmarshaler
 * Note that pkg encoding/json just provides the [Un]MarshalJSON ifaces; types (that can represent themselves as JSON) have to implement it.
 * json.Marshal() then walks objects and calls the members' MarshalJSON(), or errors if they don't have that iface
