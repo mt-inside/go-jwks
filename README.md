@@ -41,3 +41,99 @@ Application Options:
 ### Alternatives
 * [pem-to-jwk](https://github.com/callstats-io/pem-to-jwk) - JavaScript, last commit in 2016, uses string manipulation. Only works on EC keys? Only takes private keys as input? Only emits individual JWKs.
 * [pem-jwk](https://github.com/dannycoates/pem-jwk) - JavaScript, last commit in 2018, uses string manipulation. Only works on RSA keys? Only takes public keys? Only emits individual JWKs.
+
+### Istio JWT Auth Example
+Generate a keypair, which will be used to sign JWTs and verify them
+```bash
+openssl genrsa -out private.pem 2048
+openssl rsa -in private.pem -pubout -out public.pem
+```
+
+Use the private key, in PEM form, to sign the JWT
+```bash
+go install github.com/golang-jwt/jwt/v5/cmd/jwt@latest
+echo '{"sub": "one", "iss": "example.local", "iat": 1234567890, "exp": 2345678901}' | jwt -key private.pem -alg RS256 -sign - > one.jwt
+```
+
+Configure Istio to do authN of requests.
+JWTs will have their signature checked against the public part of the key, which needs to be in JWKS format.
+```bash
+cat public.pem | pem2jwks | jq . > keystore.jwks
+
+kubectl apply -f - << EOF
+apiVersion: security.istio.io/v1beta1
+kind: RequestAuthentication
+metadata:
+  name: jwt-example
+spec:
+  selector:
+    matchLabels:
+      app: http-log
+  jwtRules:
+    - issuer: "example.local"
+      outputPayloadToHeader: "x-end-user"
+      forwardOriginalToken: true
+      jwks: |
+$(cat keystore.jwks | sed 's/^/        /')
+EOF
+```
+
+Configure some request authZ rules
+* Only logged-in users can access paths by default (ie anyone with a JWT with valid signature and matching our issuer)
+* Allow anyone to access `/public`, logged-in or not
+* Allow only the user `one` to access `/admin`
+```bash
+kubectl apply -f - << EOF
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-all-public
+spec:
+  selector:
+    matchLabels:
+      app: http-log
+  action: ALLOW
+  rules:
+    - to:
+        - operation:
+            paths: ["/public"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-authd-all
+spec:
+  selector:
+    matchLabels:
+      app: http-log
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            requestPrincipals: ["*"]
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: allow-one-admin
+spec:
+  selector:
+    matchLabels:
+      app: http-log
+  action: DENY
+  rules:
+    - from:
+        - source:
+            notRequestPrincipals: ["example.local/one"]
+      to:
+        - operation:
+            paths: ["/admin"]
+EOF
+```
+
+Requests should pass the signed JWT in the `:authorization` header.
+```bash
+curlie http://$URL/admin
+token="$(cat one.jwt | tr -d '\n')"
+curlie http://$URL/admin "Authorization: Bearer $token"
+```
