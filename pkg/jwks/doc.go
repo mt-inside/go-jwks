@@ -41,10 +41,12 @@
 * Hence, functions like these at the top that go from the stdlib iface to one of our concrete impls.
  */
 /* TODO
-* - test with istio demo master (move to containerimage)
+* - X test with istio demo master (move to containerimage)
 * - rearrange to lib at top
-* - to melange & apko; test
-* - test all Just targets
+* - X to melange & apko; test
+* - X test all Just targets
+* - X tests stable
+* - fix up test_keys dir (inc the pkcs8 - leave a cmd that gens taht)
 * - doc.go (explain the ortho of the funcs, eg to/from json vs to/from an [un]marshaler
 * - README.md
 * - check gh action & its outputs
