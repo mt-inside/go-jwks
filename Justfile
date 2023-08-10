@@ -57,3 +57,4 @@ clean:
 	rm -f pem2jwks
 	rm -f coverage.out
 	rm -f melange.rsa*
+	rm -rf packages/

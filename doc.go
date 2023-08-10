@@ -1,15 +1,4 @@
 /*
-* You can go
-* * From PEM -> JWK[S]
-* * From Key[s] -> JWK[S]
-* * From JWK[S] -> Key[s]
-* * From JWK[S] -> PEM
-* Anywhere you can parse or render JSON, you can also get an [Un]Marshaler type for embedding in larger structs
-* TODO:
-* - examples
-* - tick off all those combos - API needs squaring
-* - rename module to go-jwks
-*
 * The user should be able to do everything using the types provided.
 * Everything non-method func is a convenience, and they either:
 * - deal with going straight to/from PEM, ie all the en/decoding
@@ -49,9 +38,7 @@
 * - X fix up test_keys dir
 * - X doc.go (explain the ortho of the funcs, eg to/from json vs to/from an [un]marshaler
 * - README.md
-* - check gh action & its outputs
+* - X check gh action & its outputs
 * - tag 0.2 (1.0?)
-* - examples
-*   - http get google jwks, parse, pick key by key id and verify JWT
  */
 package jwks
