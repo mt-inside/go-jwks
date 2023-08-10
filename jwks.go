@@ -76,7 +76,7 @@ func Keys2JWKS(ks []any) (string, error) {
 // JSON -> crypto.Key / Unmarshaler
 // ===
 
-// Unmarshaler implict
+// Unmarshaler is implicit
 
 func JWKS2Keys(j []byte) ([]any, error) {
 	ks := &JWKS{}
