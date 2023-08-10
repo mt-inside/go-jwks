@@ -47,7 +47,7 @@
 * - X test all Just targets
 * - X tests stable
 * - X fix up test_keys dir
-* - doc.go (explain the ortho of the funcs, eg to/from json vs to/from an [un]marshaler
+* - X doc.go (explain the ortho of the funcs, eg to/from json vs to/from an [un]marshaler
 * - README.md
 * - check gh action & its outputs
 * - tag 0.2 (1.0?)

@@ -3,7 +3,7 @@ name: test
 on: push
 
 jobs:
-  binary:
+  test:
     name: Lint and test
     runs-on: 'ubuntu-latest'
     steps:
@@ -15,6 +15,9 @@ jobs:
 
       - name: Install tools
         run: just tools-install
+
+      - name: Find tools
+        run: echo "${HOME}/go/bin" >> $GITHUB_PATH
 
       - name: test
         run: just lint

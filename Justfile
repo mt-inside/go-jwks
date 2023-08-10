@@ -12,9 +12,9 @@ MELANGE := "melange"
 APKO    := "apko"
 
 tools-install:
+	go install golang.org/x/tools/cmd/goimports@latest
 	go install honnef.co/go/tools/cmd/staticcheck@latest
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-	go install golang.org/x/tools/cmd/goimports@latest
 
 # TODO: factor out into build scripts, share with dockerfile and github action
 lint:
@@ -22,15 +22,17 @@ lint:
 	go vet ./...
 	staticcheck ./...
 	golangci-lint run ./...
+
+test: lint
 	go test ./... -race -covermode=atomic -coverprofile=coverage.out
 
-run *ARGS: lint
+run *ARGS: test
 	go run ./cmd/pem2jwks {{ARGS}}
 
-build: lint
+build: test
 	go build -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
 
-install: lint
+install: test
 	go install -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
 
 package:
