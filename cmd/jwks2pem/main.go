@@ -38,7 +38,7 @@ func main() {
 		panic(err)
 	}
 
-	pem, err := jwks.PEM2JWKSPublic(bytes)
+	pem, err := jwks.PEM2JWKS(bytes)
 	if err != nil {
 		panic(err)
 	}
