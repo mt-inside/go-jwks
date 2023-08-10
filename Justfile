@@ -1,10 +1,15 @@
+set dotenv-load
+
 default:
 	@just --list
 
-containerRepo := "docker.io/mtinside/pem2jwks"
-cleanVersion  := `git describe --tags --always --abbrev=0`
-verboseVersion  := `git describe --tags --always --abbrev --dirty --broken`
-platforms     := "linux/amd64,linux/arm64,linux/arm/v7"
+DH_USER := "mtinside"
+REPO := "docker.io/" + DH_USER + "/pem2jwks"
+TAG := `git describe --tags --always --abbrev`
+TAGD := `git describe --tags --always --abbrev --dirty --broken`
+CGR_ARCHS := "aarch64,amd64" # "x86,armv7"
+MELANGE := "melange"
+APKO    := "apko"
 
 tools-install:
 	go install honnef.co/go/tools/cmd/staticcheck@latest
@@ -20,19 +25,26 @@ lint:
 	go test ./... -race -covermode=atomic -coverprofile=coverage.out
 
 run *ARGS: lint
-	go run . {{ARGS}}
+	go run ./cmd/pem2jwks {{ARGS}}
 
 build: lint
-	go build -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="{{verboseVersion}}"'" .
+	go build -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
 
 install: lint
-	go install -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="${VERSION}"'" .
+	go install -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
 
-image-build-local:
-	docker buildx build --build-arg VERSION={{verboseVersion}} -t {{containerRepo}}:{{cleanVersion}} -t {{containerRepo}}:latest --load .
+package:
+	{{MELANGE}} keygen
+	{{MELANGE}} build --arch {{CGR_ARCHS}} --signing-key melange.rsa melange.yaml
+
+image-local:
+	{{APKO}} build --keyring-append melange.rsa.pub --arch {{CGR_ARCHS}} apko.yaml {{REPO}}:{{TAG}} pem2jwks.tar
+	docker load < pem2jwks.tar
 image-publish:
-	docker buildx build --platform={{platforms}} --build-arg VERSION={{verboseVersion}} -t {{containerRepo}}:{{cleanVersion}} -t {{containerRepo}}:latest --push .
+	{{APKO}} login docker.io -u {{DH_USER}} --password "${DH_TOKEN}"
+	{{APKO}} publish --keyring-append melange.rsa.pub --arch {{CGR_ARCHS}} apko.yaml {{REPO}}:{{TAG}}
+
 image-ls:
-	hub-tool tag ls --platforms {{containerRepo}}
+	hub-tool tag ls --platforms {{REPO}}
 image-inspect:
-	docker buildx imagetools inspect {{containerRepo}}:{{cleanVersion}}
+	docker buildx imagetools inspect {{REPO}}:{{TAG}}
