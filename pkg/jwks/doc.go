@@ -53,7 +53,5 @@
 * - tag 0.2 (1.0?)
 * - examples
 *   - http get google jwks, parse, pick key by key id and verify JWT
-*   - get marshaller and put it in larger object which is then serialised
-*   - ditto unmarshaller - unmarhsal some JSON object that has a jwk embedded in it
  */
 package jwks
