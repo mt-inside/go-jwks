@@ -48,5 +48,4 @@ jobs:
 
       - name: Sign OCI
         shell: bash
-          run: |
-                COSIGN_EXPERIMENTAL=true cosign sign ${{ steps.apko.outputs.digest }}
+        run: COSIGN_EXPERIMENTAL=true cosign sign ${{ steps.apko.outputs.digest }}
