@@ -1,5 +1,8 @@
 # go-jwks
 
+[![build](https://github.com/mt-inside/go-jwks/actions/workflows/test.yaml/badge.svg)](https://github.com/mt-inside/go-jwks/actions/workflows/test.yaml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/mt-inside/go-jwks.svg)](https://pkg.go.dev/github.com/mt-inside/go-jwks)
+
 go-jwks is a comprehensive library for de/serialising JWK[S] to PEMs, and Go's crypto.[Public,Private]Key types.
 
 ## pem2jwks
