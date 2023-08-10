@@ -60,8 +60,8 @@ miIEia6RgiPAFUEjRd4QiUSWWTeSbsweADB4SICCfFWYQkjuACx7xXc7qw==
 	/* If you need KeyIDs, use the structs directly. */
 	printer = &jwks.JWKS{
 		Keys: []*jwks.JWK{
-			&jwks.JWK{KeyID: "deadbeef", Key: rKey.Public()},
-			&jwks.JWK{KeyID: "deafcafe", Key: ecKey.Public()},
+			{KeyID: "deadbeef", Key: rKey.Public()},
+			{KeyID: "deafcafe", Key: ecKey.Public()},
 		},
 	}
 	jsonBytes, _ = json.Marshal(printer)

@@ -18,6 +18,7 @@ tools-install:
 
 # TODO: factor out into build scripts, share with dockerfile and github action
 lint:
+	gofmt -s -w .
 	goimports -local github.com/mt-inside/go-jwks -w .
 	go vet ./...
 	staticcheck ./...
