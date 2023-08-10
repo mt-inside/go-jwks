@@ -45,11 +45,7 @@ func JWKS2PEM(j []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	vals := make([]any, 0, len(keys))
-	for _, val := range keys {
-		vals = append(vals, val)
-	}
-	return Keys2PEM(vals)
+	return Keys2PEM(keys)
 }
 
 // ===
@@ -88,7 +84,21 @@ func Keys2JWKS(ks []any) (string, error) {
 
 // Unmarshaler implict
 
-func JWKS2Keys(j []byte) (map[string]any, error) {
+func JWKS2Keys(j []byte) ([]any, error) {
+	ks := &JWKS{}
+	err := json.Unmarshal(j, ks)
+	if err != nil {
+		return nil, err
+	}
+
+	out := []any{}
+	for _, k := range ks.Keys {
+		out = append(out, k.Key)
+	}
+
+	return out, nil
+}
+func JWKS2KeysMap(j []byte) (map[string]any, error) {
 	ks := &JWKS{}
 	err := json.Unmarshal(j, ks)
 	if err != nil {
