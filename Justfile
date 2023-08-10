@@ -18,7 +18,7 @@ tools-install:
 
 # TODO: factor out into build scripts, share with dockerfile and github action
 lint:
-	goimports -local github.com/mt-inside/pem2jwks -w .
+	goimports -local github.com/mt-inside/go-jwks -w .
 	go vet ./...
 	staticcheck ./...
 	golangci-lint run ./...
@@ -30,10 +30,10 @@ run *ARGS: test
 	go run ./cmd/pem2jwks {{ARGS}}
 
 build: test
-	go build -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
+	go build -ldflags="-X 'github.com/mt-inside/go-jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
 
 install: test
-	go install -ldflags="-X 'github.com/mt-inside/pem2jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
+	go install -ldflags="-X 'github.com/mt-inside/go-jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
 
 package:
 	{{MELANGE}} keygen
