@@ -1,4 +1,4 @@
-module github.com/mt-inside/pem2jwks
+module github.com/mt-inside/go-jwks
 
 go 1.20
 

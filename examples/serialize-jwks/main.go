@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mt-inside/pem2jwks/pkg/jwks"
+	"github.com/mt-inside/go-jwks"
 )
 
 func main() {
