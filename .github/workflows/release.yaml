@@ -42,11 +42,11 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-x86_64
-            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm64
-            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Linux-arm
-            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Darwin-x86_64
-            /home/runner/work/pem2jwks/pem2jwks/pem2jwks-Darwin-arm64
+            ${{ github.workspace }}/pem2jwks-Linux-x86_64
+            ${{ github.workspace }}/pem2jwks-Linux-arm64
+            ${{ github.workspace }}/pem2jwks-Linux-arm
+            ${{ github.workspace }}/pem2jwks-Darwin-x86_64
+            ${{ github.workspace }}/pem2jwks-Darwin-arm64
           fail_on_unmatched_files: true
           generate_release_notes: true
           # tag_name: test
