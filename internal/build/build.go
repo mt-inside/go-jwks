@@ -1,4 +1,5 @@
 package build
 
-var Name = "pem2jwks"
-var Version = "unknown"
+const Name = "pem2jwks"
+
+var Version string

@@ -1,13 +1,13 @@
 package:
   name: pem2jwks
-  # TODO: take as arg or something
-  version: 0.1.0
+  epoch: 0
+  version: v0.2.0-8-ge5e81c1-dirty
   description: Converts PEMs to JWKS
   url: https://github.com/mt-inside/go-jwks
   copyright:
-    - paths: ["*"]
+    - paths:
+        - "*"
       license: Apache-2.0
-
 environment:
   contents:
     keyring:
@@ -18,9 +18,8 @@ environment:
       - wolfi-base
       - build-base
       - go
-
 pipeline:
   - name: Build
     runs: |
       # build, rather than install, to be able to control output dir
-      CGO_ENABLED=0 go build -o "${{targets.destdir}}/usr/bin/pem2jwks" -a -ldflags "-w -X 'github.com/mt-inside/pem2jwks/internal/build.Version="${{package.version}}"'" ./cmd/pem2jwks
+      CGO_ENABLED=0 go build -o "${{targets.destdir}}/usr/bin/pem2jwks" -a -ldflags "-w -X 'github.com/mt-inside/go-jwks/internal/build.Version="${{package.version}}"'" ./cmd/pem2jwks
