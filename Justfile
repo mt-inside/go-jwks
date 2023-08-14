@@ -8,6 +8,7 @@ REPO := "docker.io/" + DH_USER + "/pem2jwks"
 TAG := `git describe --tags --always --abbrev`
 TAGD := `git describe --tags --always --abbrev --dirty --broken`
 CGR_ARCHS := "aarch64,amd64" # "x86,armv7"
+LD_COMMON := "-ldflags \"-X 'github.com/mt-inside/go-jwks/internal/build.Version=" + TAGD + "'\""
 MELANGE := "melange"
 APKO    := "apko"
 
@@ -28,15 +29,16 @@ test: lint
 	go test ./... -race -covermode=atomic -coverprofile=coverage.out
 
 run *ARGS: test
-	go run ./cmd/pem2jwks {{ARGS}}
+	go run {{LD_COMMON}} ./cmd/pem2jwks {{ARGS}}
 
 build: test
-	go build -ldflags="-X 'github.com/mt-inside/go-jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
+	go build {{LD_COMMON}} ./cmd/pem2jwks
 
 install: test
-	go install -ldflags="-X 'github.com/mt-inside/go-jwks/internal/build.Version="{{TAGD}}"'" ./cmd/pem2jwks
+	go install {{LD_COMMON}} ./cmd/pem2jwks
 
-package:
+package: test
+	{{MELANGE}} bump melange.yaml {{TAGD}}
 	{{MELANGE}} keygen
 	{{MELANGE}} build --arch {{CGR_ARCHS}} --signing-key melange.rsa melange.yaml
 

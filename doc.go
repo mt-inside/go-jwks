@@ -38,7 +38,9 @@
 * - X fix up test_keys dir
 * - X doc.go (explain the ortho of the funcs, eg to/from json vs to/from an [un]marshaler
 * - README.md
+* - api comments. Turn linting up to 11
+* - X links in the readme like to godoc one
 * - X check gh action & its outputs
-* - tag 0.2 (1.0?)
+* - X tag 0.2 (1.0?)
  */
 package jwks
