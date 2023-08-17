@@ -18,8 +18,11 @@ environment:
       - wolfi-base
       - build-base
       - go
+      - rust
+      - git
 pipeline:
+  - name: Just
+    runs: cargo install just
   - name: Build
     runs: |
-      # build, rather than install, to be able to control output dir
-      CGO_ENABLED=0 go build -o "${{targets.destdir}}/usr/bin/pem2jwks" -a -ldflags "-w -X 'github.com/mt-inside/go-jwks/internal/build.Version="${{package.version}}"'" ./cmd/pem2jwks
+      $HOME/.cargo/bin/just build-ci -o "${{targets.destdir}}/usr/bin/pem2jwks"

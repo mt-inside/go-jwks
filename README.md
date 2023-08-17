@@ -6,20 +6,18 @@
 
 go-jwks is a comprehensive library for de/serialising JWK[S] to PEMs, and Go's crypto.[Public,Private]Key types.
 
-## pem2jwks
+## pem2jwks binary
 
-pem2jwks converts public keys in PEM format (typically used to _sign_ JWTs) to the JWKS format usually required by software that _validates_ them.
-
-### Obtaining
+The pem2jwks command converts public keys in PEM format (typically used to _sign_ JWTs) to the JWKS format usually required by software that _validates_ them.
 
 Run from container image:
 ```bash
-cat key.pem | docker run -i --rm ghcr.io/mt-inside/pem2jwks:latest
+cat key.pem | docker run -i --rm ghcr.io/mt-inside/pem2jwks:v0.2.0
 ```
 
 Download single, statically-linked binary
 ```bash
-wget -O pem2jwks https://github.com/mt-inside/pem2jwks/releases/download/v0.0.10/pem2jwks-$(uname -s)-$(uname -m)
+wget -O pem2jwks https://github.com/mt-inside/go-jwks/releases/download/v0.2.0/pem2jwks-$(uname -s)-$(uname -m)
 chmod u+x pem2jwks
 cat key.pem | ./pem2jwks
 ```
@@ -28,18 +26,6 @@ Install from source
 ```bash
 go install github.com/mt-inside/go-jwks/cmd/pem2jwks@latest
 cat key.pem | ${GOPATH}/bin/pem2jwks
-```
-
-### Running
-
-```
-Usage:
-  pem2jwks [OPTIONS]
-
-Application Options:
-  -1, --singleton  Output only a single JWK rather than an array of them (a JWKS)
-  -p, --private    Include private key parameters in output. If not specified then supplying a private key will
-                   extract just the public fields from it
 ```
 
 ### Alternatives
