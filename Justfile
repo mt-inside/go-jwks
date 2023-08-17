@@ -60,11 +60,6 @@ image-ls:
 	hub-tool tag ls --platforms {{REPO}}
 image-inspect:
 	docker buildx imagetools inspect {{REPO}}:{{TAG}}
-
-image-ls:
-	hub-tool tag ls --platforms {{REPO}}
-image-inspect:
-	docker buildx imagetools inspect {{REPO}}:{{TAG}}
 sbom-show:
 	docker sbom {{REPO}}:{{TAG}}
 snyk:
