@@ -10,6 +10,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Update Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '>=1.21'
+
       - name: Install Just
         uses: extractions/setup-just@v1
 

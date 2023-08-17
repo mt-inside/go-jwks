@@ -39,8 +39,14 @@ render-mod-graph:
 render-pkg-graph:
 	godepgraph -s -onlyprefixes github.com/mt-inside ./cmd/http-log | dot -Tpng -o pkg_graph.png
 
-build: test
-	go build {{LD_COMMON}} ./cmd/pem2jwks
+build-dev: test
+	# Don't use CGO here, like in the container, so this binary is pretty representative.
+	GCO_ENABLED=0 go build {{LD_COMMON}} ./cmd/pem2jwks
+
+# Don't lint/test, because it doesn't work in various CI envs
+build-ci *ARGS:
+	# We don't use CGO as we've no need for it
+	CGO_ENABLED=0 go build {{LD_COMMON}} {{ARGS}} ./cmd/pem2jwks
 
 install: test
 	go install {{LD_COMMON}} ./cmd/pem2jwks
