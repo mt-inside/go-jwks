@@ -1,7 +1,7 @@
 set dotenv-load
 
 default:
-	@just --list
+	@just --list --unsorted --color=always
 
 DH_USER := "mtinside"
 REPO := "docker.io/" + DH_USER + "/pem2jwks"
@@ -18,8 +18,12 @@ tools-install:
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install golang.org/x/exp/cmd/...@latest
 	go install github.com/kisielk/godepgraph@latest
+	go install golang.org/x/tools/cmd/stringer@latest
 
-lint:
+generate:
+	go generate ./...
+
+lint: generate
 	gofmt -s -w .
 	goimports -local github.com/mt-inside/go-jwks -w .
 	go vet ./...
@@ -42,6 +46,8 @@ install: test
 	go install {{LD_COMMON}} ./cmd/pem2jwks
 
 package: test
+	# if there's >1 package in this directory, apko seems to pick the _oldest_ without fail
+	rm -rf ./packages/
 	{{MELANGE}} bump melange.yaml {{TAGD}}
 	{{MELANGE}} keygen
 	{{MELANGE}} build --arch {{CGR_ARCHS}} --signing-key melange.rsa melange.yaml
@@ -69,12 +75,13 @@ cosign-verify:
 	COSIGN_EXPERIMENTAL=1 cosign verify {{REPO}}:{{TAG}} | jq .
 
 clean:
+	rm -f coverage.out
+	rm -f mod_graph.png pkg_graph.png
 	rm -f sbom-*
+	rm -rf packages/
 	rm -f pem2jwks.tar
 	rm -f pem2jwks
-	rm -f coverage.out
 	rm -f melange.rsa*
-	rm -rf packages/
 
 run *ARGS: test
 	go run {{LD_COMMON}} ./cmd/pem2jwks {{ARGS}}
