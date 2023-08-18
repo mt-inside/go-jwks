@@ -18,11 +18,9 @@ environment:
       - wolfi-base
       - build-base
       - go
-      - rust
+      - just
       - git
 pipeline:
-  - name: Just
-    runs: cargo install just
   - name: Build
     runs: |
-      $HOME/.cargo/bin/just build-ci -o "${{targets.destdir}}/usr/bin/pem2jwks"
+      just build-ci -o "${{targets.destdir}}/usr/bin/pem2jwks"
