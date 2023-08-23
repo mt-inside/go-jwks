@@ -52,7 +52,7 @@ build-ci *ARGS:
 	CGO_ENABLED=0 go build {{LD_COMMON}} {{ARGS}} ./cmd/pem2jwks
 
 install: test
-	go install {{LD_COMMON}} ./cmd/pem2jwks
+	CGO_ENABLED=0 go install {{LD_COMMON}} ./cmd/pem2jwks
 
 package: test
 	# if there's >1 package in this directory, apko seems to pick the _oldest_ without fail
