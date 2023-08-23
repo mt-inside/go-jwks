@@ -49,7 +49,7 @@ build-dev: test
 # Don't lint/test, because it doesn't work in various CI envs
 build-ci *ARGS:
 	# We don't use CGO as we've no need for it
-	CGO_ENABLED=0 go build {{LD_COMMON}} {{ARGS}} ./cmd/pem2jwks
+	CGO_ENABLED=0 go build {{LD_COMMON}} -v {{ARGS}} ./cmd/pem2jwks
 
 install: test
 	CGO_ENABLED=0 go install {{LD_COMMON}} ./cmd/pem2jwks
