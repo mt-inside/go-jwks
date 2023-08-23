@@ -40,7 +40,7 @@ render-mod-graph:
 	go mod graph | modgraphviz | dot -Tpng -o mod_graph.png
 
 render-pkg-graph:
-	godepgraph -s -onlyprefixes github.com/mt-inside ./cmd/http-log | dot -Tpng -o pkg_graph.png
+	godepgraph -s -onlyprefixes github.com/mt-inside ./cmd/pem2jwks | dot -Tpng -o pkg_graph.png
 
 build-dev: test
 	# Don't use CGO here, like in the container, so this binary is pretty representative.
