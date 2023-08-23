@@ -74,7 +74,7 @@ jobs:
           config: apko.yaml
           archs: x86_64,aarch64
           # Will be a SHA, unless this commit is tagged. Which is ideal tbh
-          tag: ghcr.io/mt-inside/pem2jwks:${{ github.ref_name }}
+          tag: ghcr.io/mt-inside/pem2jwks:${{ github.ref_name }} ghcr.io/mt-inside/pem2jwks:latest
           # Default value for melange-build.signing-key-path
           keyring-append: ${{ github.workspace }}/melange.rsa.pub
 
