@@ -23,4 +23,5 @@ environment:
 pipeline:
   - name: Build
     runs: |
+      git config --global --add safe.directory /home/build
       just build-ci -o "${{targets.destdir}}/usr/bin/pem2jwks"
