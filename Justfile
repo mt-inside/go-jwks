@@ -11,7 +11,8 @@ TAG := `git describe --tags --always --abbrev`
 TAGD := `git describe --tags --always --abbrev --dirty --broken`
 CGR_ARCHS := "aarch64,amd64" # "x86,armv7"
 LD_COMMON := "-ldflags \"-X 'github.com/mt-inside/go-jwks/internal/build.Version=" + TAGD + "'\""
-LD_STATIC := "-ldflags \"-X 'github.com/mt-inside/go-jwks/internal/build.Version=" + TAGD + "' -w -linkmode external -extldflags '-static'\""
+LD_RELEASE := "-ldflags \"-X 'github.com/mt-inside/go-jwks/internal/build.Version=" + TAGD + "' -w -s\""
+LD_STATIC := "-ldflags \"-X 'github.com/mt-inside/go-jwks/internal/build.Version=" + TAGD + "' -linkmode external -extldflags '-static'\""
 MELANGE := "melange"
 APKO    := "apko"
 
@@ -49,7 +50,7 @@ build-dev: test
 # Don't lint/test, because it doesn't work in various CI envs
 build-ci *ARGS:
 	# We don't use CGO as we've no need for it
-	CGO_ENABLED=0 go build {{LD_COMMON}} -v {{ARGS}} ./cmd/pem2jwks
+	CGO_ENABLED=0 go build {{LD_RELEASE}} -v {{ARGS}} ./cmd/pem2jwks
 
 install: test
 	CGO_ENABLED=0 go install {{LD_COMMON}} ./cmd/pem2jwks
