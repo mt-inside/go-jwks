@@ -1,7 +1,8 @@
 package:
   name: pem2jwks
-  epoch: 0
-  version: v0.2.1-6-gcc0ed80
+  epoch: 2
+  version: v0.2.1-10-gc553a7c-dirty
+
   description: Converts PEMs to JWKS
   url: https://github.com/mt-inside/go-jwks
   copyright:
